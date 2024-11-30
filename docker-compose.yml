@@ -9,6 +9,7 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
       - VAULT_DEV_ROOT_TOKEN_ID=root
       - VAULT_API_ADDR=http://localhost:8200
+      - VAULT_LOG_LEVEL=debug  # Enable verbose logging
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
