@@ -44,17 +44,21 @@ services:
       - vault-config:/vault/config
 
   backend:
+    image: vault-wrapper-backend
+    container_name: vault-wrapper-backend
     build:
       context: ./backend
       dockerfile: inline
-    container_name: vault-wrapper-backend
+      args:
+        APP_ENV_PATH: /vault/config/app.env
+    volumes:
+      - ./backend/entrypoint.sh:/entrypoint.sh
     environment:
       VAULT_ADDR: "http://vault:8200"
-    env_file:
-      - /vault/config/app.env
     depends_on:
       - vault
       - vault-init
+    entrypoint: ["/entrypoint.sh"]
     labels:
       traefik.enable: true
       traefik.http.routers.wrapper-backend.entrypoints: websecure
@@ -64,12 +68,13 @@ services:
       traefik.http.services.wrapper-backend.loadbalancer.server.port: 3000
 
   frontend:
+    image: vault-wrapper-frontend
+    container_name: vault-wrapper-frontend
     build:
       context: ./frontend
       dockerfile: inline
       args:
         REACT_APP_BACKEND_URL: "http://backend.vault-wrapper.rkaa.tech"
-    container_name: vault-wrapper-frontend
     depends_on:
       - backend
     labels:
