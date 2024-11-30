@@ -27,8 +27,9 @@ def wrap_text():
     if request.method == "POST":
         text = request.form.get("text")
         if not text:
-            app.logger.warning("No text provided to wrap.")
-            return render_template("index.html", error="Please provide some text to wrap.")
+            error_message = "Please provide some text to wrap."
+            app.logger.warning(error_message)
+            return render_template("index.html", error=error_message)
         
         # Log the request details
         app.logger.debug(f"Received text to wrap: {text}")
@@ -45,11 +46,13 @@ def wrap_text():
                 app.logger.info(f"Successfully wrapped the text. Token: {token}")
                 return render_template("index.html", wrapped_token=token)
             else:
-                app.logger.error(f"Failed to wrap text. Response: {response.status_code}, {response.text}")
-                return render_template("index.html", error="Failed to wrap text. Check Vault logs.")
-        except Exception as e:
-            app.logger.error(f"Error communicating with Vault: {e}")
-            return render_template("index.html", error="Failed to wrap text. Check Vault logs.")
+                error_message = f"Failed to wrap text. Response: {response.status_code}, {response.text}"
+                app.logger.error(error_message)
+                return render_template("index.html", error=error_message)
+        except requests.exceptions.RequestException as e:
+            error_message = f"Error communicating with Vault: {e}"
+            app.logger.error(error_message)
+            return render_template("index.html", error=error_message)
     
     return render_template("index.html")
 
@@ -58,8 +61,9 @@ def wrap_text():
 def unwrap_token():
     token = request.form.get("token")
     if not token:
-        app.logger.warning("No token provided to unwrap.")
-        return render_template("index.html", error="Please provide a token to unwrap.")
+        error_message = "Please provide a token to unwrap."
+        app.logger.warning(error_message)
+        return render_template("index.html", error=error_message)
     
     # Log the request details
     app.logger.debug(f"Received token to unwrap: {token}")
@@ -75,11 +79,13 @@ def unwrap_token():
             app.logger.info(f"Successfully unwrapped the token. Data: {unwrapped_data}")
             return render_template("index.html", unwrapped_data=unwrapped_data)
         else:
-            app.logger.error(f"Failed to unwrap token. Response: {response.status_code}, {response.text}")
-            return render_template("index.html", error="Failed to unwrap token. Check the provided token.")
-    except Exception as e:
-        app.logger.error(f"Error communicating with Vault: {e}")
-        return render_template("index.html", error="Failed to unwrap token. Check the provided token.")
+            error_message = f"Failed to unwrap token. Response: {response.status_code}, {response.text}"
+            app.logger.error(error_message)
+            return render_template("index.html", error=error_message)
+    except requests.exceptions.RequestException as e:
+        error_message = f"Error communicating with Vault: {e}"
+        app.logger.error(error_message)
+        return render_template("index.html", error=error_message)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
