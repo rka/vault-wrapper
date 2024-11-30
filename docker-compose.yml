@@ -38,26 +38,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    ports:
-      - 8200:8200  # Expose Vault on the host for testing
+    # ports:
+    #   - 8200:8200  # Expose Vault on the host for testing
 
-  vault-webapp:
-    build:
-      context: .
-    container_name: vault-webapp
-    restart: unless-stopped
-    environment:
-      - VAULT_ADDR=http://vault:8200
-    networks:
-      - saltbox
+  vault-wrap-app:
+    build: .
+    container_name: vault-wrap-app
+    # ports:
+    #   - "3001:3001"
     labels:
       traefik.enable: true
-      traefik.http.routers.vault-webapp.entrypoints: websecure
-      traefik.http.routers.vault-webapp.rule: Host(`webapp.rkaa.tech`)
-      traefik.http.routers.vault-webapp.tls.certresolver: httpresolver
-      traefik.http.services.vault-webapp.loadbalancer.server.port: 5000
+      traefik.http.routers.vault-wrap-app.entrypoints: websecure
+      traefik.http.routers.vault-wrap-app.rule: Host(`webapp.rkaa.tech`)
+      traefik.http.routers.vault-wrap-app.tls.certresolver: httpresolver
+      traefik.http.services.vault-wrap-app.loadbalancer.server.port: 3001
     depends_on:
       - vault
+    networks:
+      - saltbox
 
 networks:
   saltbox:
