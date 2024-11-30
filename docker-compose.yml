@@ -12,6 +12,13 @@ services:
     command: vault server -dev
     volumes:
       - vault-data:/vault/data
+    labels:
+      traefik.enable: true
+      traefik.http.routers.vault.entrypoints: websecure
+      traefik.http.routers.vault.rule: Host(`vault-wrapper.rkaa.tech`)
+      traefik.http.routers.vault.tls.certresolver: httpresolver
+      traefik.http.routers.vault.tls.options: securetls@file
+      traefik.http.services.vault.loadbalancer.server.port: 8200
 
   vault-init:
     image: hashicorp/vault:1.13.2
@@ -48,39 +55,34 @@ services:
     depends_on:
       - vault
       - vault-init
-    ports:
-      - "3001:3000"
-    inline: |
-      FROM node:16
-      WORKDIR /app
-      COPY package*.json ./
-      RUN npm install
-      COPY . .
-      EXPOSE 3000
-      CMD ["node", "server.js"]
+    labels:
+      traefik.enable: true
+      traefik.http.routers.wrapper-backend.entrypoints: websecure
+      traefik.http.routers.wrapper-backend.rule: Host(`backend.vault-wrapper.rkaa.tech`)
+      traefik.http.routers.wrapper-backend.tls.certresolver: httpresolver
+      traefik.http.routers.wrapper-backend.tls.options: securetls@file
+      traefik.http.services.wrapper-backend.loadbalancer.server.port: 3000
 
   frontend:
     build:
       context: ./frontend
       dockerfile: inline
       args:
-        REACT_APP_BACKEND_URL: "http://localhost:3001"
+        REACT_APP_BACKEND_URL: "http://backend.vault-wrapper.rkaa.tech"
     container_name: vault-wrapper-frontend
     depends_on:
       - backend
-    ports:
-      - "3000:3000"
-    inline: |
-      FROM node:16
-      WORKDIR /app
-      COPY package*.json ./
-      RUN npm install
-      COPY . .
-      ARG REACT_APP_BACKEND_URL
-      ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
-      RUN npm run build
-      EXPOSE 3000
-      CMD ["npx", "serve", "-s", "build"]
+    labels:
+      traefik.enable: true
+      traefik.http.routers.wrapper-frontend.entrypoints: websecure
+      traefik.http.routers.wrapper-frontend.rule: Host(`vault-wrapper.rkaa.tech`)
+      traefik.http.routers.wrapper-frontend.tls.certresolver: httpresolver
+      traefik.http.routers.wrapper-frontend.tls.options: securetls@file
+      traefik.http.services.wrapper-frontend.loadbalancer.server.port: 3000
+
+networks:
+  saltbox:
+    external: true
 
 volumes:
   vault-data:
