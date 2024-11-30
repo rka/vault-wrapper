@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vault Wrapper</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vault Data Wrapper</h1>
+        
+        <div class="wrap-section">
+            <h2>Wrap Data</h2>
+            <textarea id="wrapInput" placeholder="Enter data to wrap"></textarea>
+            <button onclick="wrapData()">Wrap</button>
+            <div id="wrapResult"></div>
+        </div>
+
+        <div class="unwrap-section">
+            <h2>Unwrap Data</h2>
+            <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
+            <button onclick="unwrapData()">Unwrap</button>
+            <div id="unwrapResult"></div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
