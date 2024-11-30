@@ -9,8 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const vaultAddr = "http://vault:8200"
-const vaultToken = "root"
+// const vaultAddr = "http://vault:8200"
+// const vaultToken = "root"
 
 func wrapData(data string) (string, error) {
 	logrus.Debug("Wrapping data")
