@@ -1,9 +1,17 @@
 package main
 
 import (
-	"log"
 	"net/http"
+	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	// Set up logrus
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+}
 
 func main() {
 	http.HandleFunc("/", indexHandler)
@@ -14,8 +22,8 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	log.Println("Server starting on :3001")
+	logrus.Info("Server starting on :3001")
 	if err := http.ListenAndServe(":3001", nil); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
