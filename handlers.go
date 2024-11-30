@@ -2,16 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
 	"net/http"
+
 	"github.com/sirupsen/logrus"
 )
 
-var templates = template.Must(template.ParseFiles("templates/layout.html", "templates/index.html"))
-
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Handling index request")
-	templates.ExecuteTemplate(w, "layout", nil)
+	http.ServeFile(w, r, "./static/index.html")
 }
 
 func wrapHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +28,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := wrapData(data.Text)
+	token, err := wrapData(data.Text) // Ensure this function is defined in vault_service.go
 	if err != nil {
 		logrus.Error("Error wrapping data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,7 +56,7 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unwrappedData, err := unwrapData(data.Token)
+	unwrappedData, err := unwrapData(data.Token) // Ensure this function is defined in vault_service.go
 	if err != nil {
 		logrus.Error("Error unwrapping data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -73,7 +73,3 @@ func main() {
 		logrus.Fatal(err)
 	}
 }
-
-func  (w http.ResponseWriter, r *http.Request) {
-    http.ServeFile(w, r, "./static/index.html")
-}

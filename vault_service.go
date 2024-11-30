@@ -1,21 +1,29 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+
 	"github.com/sirupsen/logrus"
 )
 
-// const vaultAddr = "http://vault:8200"
-// const vaultToken = "root"
+// const (
+// 	vaultAddr  = "http://vault:8200" // Define the Vault address
+// 	vaultToken = "root"               // Define the Vault token (consider using a safer method for production)
+// )
 
+// wrapData wraps the provided data using Vault's wrapping functionality.
 func wrapData(data string) (string, error) {
 	logrus.Debug("Wrapping data")
 	payload := map[string]string{"data": data}
-	jsonPayload, _ := json.Marshal(payload)
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		logrus.Error("Error marshalling JSON payload: ", err)
+		return "", err
+	}
 
 	req, err := http.NewRequest("POST", vaultAddr+"/v1/sys/wrapping/wrap", bytes.NewBuffer(jsonPayload))
 	if err != nil {
@@ -38,7 +46,10 @@ func wrapData(data string) (string, error) {
 	}
 
 	var result map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&result)
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		logrus.Error("Error decoding response from Vault: ", err)
+		return "", err
+	}
 
 	wrapInfo, ok := result["wrap_info"].(map[string]interface{})
 	if !ok {
@@ -56,6 +67,7 @@ func wrapData(data string) (string, error) {
 	return token, nil
 }
 
+// unwrapData unwraps the provided token using Vault's unwrapping functionality.
 func unwrapData(token string) (string, error) {
 	logrus.Debug("Unwrapping data")
 	req, err := http.NewRequest("POST", vaultAddr+"/v1/sys/wrapping/unwrap", nil)
@@ -85,7 +97,10 @@ func unwrapData(token string) (string, error) {
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal(body, &result)
+	if err := json.Unmarshal(body, &result); err != nil {
+		logrus.Error("Error unmarshalling response body: ", err)
+		return "", err
+	}
 
 	data, ok := result["data"].(map[string]interface{})
 	if !ok {
