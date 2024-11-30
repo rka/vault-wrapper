@@ -1,93 +1,23 @@
-version: '3.8'
-
+version: "3"
 services:
-  vault:
-    image: hashicorp/vault:1.13.2
-    container_name: vault
+  vault-webapp:
+    build:
+      context: .
+    container_name: vault-webapp
+    restart: unless-stopped
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: root
-      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
-    ports:
-      - "8200:8200"
-    command: vault server -dev
-    volumes:
-      - vault-data:/vault/data
-    labels:
-      traefik.enable: true
-      traefik.http.routers.vault.entrypoints: websecure
-      traefik.http.routers.vault.rule: Host(`vault-wrapper.rkaa.tech`)
-      traefik.http.routers.vault.tls.certresolver: httpresolver
-      traefik.http.routers.vault.tls.options: securetls@file
-      traefik.http.services.vault.loadbalancer.server.port: 8200
-
-  vault-init:
-    image: hashicorp/vault:1.13.2
-    container_name: vault-init
-    depends_on:
-      - vault
-    entrypoint: >
-      /bin/sh -c "
-      echo 'Waiting for Vault to be ready...' &&
-      until vault status > /dev/null 2>&1; do sleep 5; done &&
-      echo 'Vault is ready. Proceeding with initialization.' &&
-      export VAULT_ADDR=http://vault:8200 &&
-      vault login root &&
-      vault auth enable approle &&
-      vault write auth/approle/role/test-role \
-        secret_id_ttl=60m \
-        token_ttl=60m \
-        token_policies=default &&
-      ROLE_ID=$(vault read -field=role_id auth/approle/role/test-role/role-id) &&
-      SECRET_ID=$(vault write -field=secret_id -f auth/approle/role/test-role/secret-id) &&
-      echo ROLE_ID=$ROLE_ID > /vault/config/app.env &&
-      echo SECRET_ID=$SECRET_ID >> /vault/config/app.env
-      "
-    volumes:
-      - vault-config:/vault/config
+      - VAULT_ADDR=http://vault:8200
     networks:
       - saltbox
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: inline
-    container_name: vault-wrapper-backend
-    environment:
-      VAULT_ADDR: "http://vault:8200"
-    env_file:
-      - /vault/config/app.env
+    labels:
+      traefik.enable: true
+      traefik.http.routers.vault-webapp.entrypoints: websecure
+      traefik.http.routers.vault-webapp.rule: Host(`webapp.rkaa.tech`)
+      traefik.http.routers.vault-webapp.tls.certresolver: httpresolver
+      traefik.http.services.vault-webapp.loadbalancer.server.port: 5000
     depends_on:
       - vault
-      - vault-init
-    labels:
-      traefik.enable: true
-      traefik.http.routers.wrapper-backend.entrypoints: websecure
-      traefik.http.routers.wrapper-backend.rule: Host(`backend.vault-wrapper.rkaa.tech`)
-      traefik.http.routers.wrapper-backend.tls.certresolver: httpresolver
-      traefik.http.routers.wrapper-backend.tls.options: securetls@file
-      traefik.http.services.wrapper-backend.loadbalancer.server.port: 3000
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: inline
-      args:
-        REACT_APP_BACKEND_URL: "http://backend.vault-wrapper.rkaa.tech"
-    container_name: vault-wrapper-frontend
-    depends_on:
-      - backend
-    labels:
-      traefik.enable: true
-      traefik.http.routers.wrapper-frontend.entrypoints: websecure
-      traefik.http.routers.wrapper-frontend.rule: Host(`vault-wrapper.rkaa.tech`)
-      traefik.http.routers.wrapper-frontend.tls.certresolver: httpresolver
-      traefik.http.routers.wrapper-frontend.tls.options: securetls@file
-      traefik.http.services.wrapper-frontend.loadbalancer.server.port: 3000
 
 networks:
   saltbox:
     external: true
-
-volumes:
-  vault-data:
-  vault-config:
