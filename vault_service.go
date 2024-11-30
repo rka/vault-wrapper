@@ -42,7 +42,6 @@ func wrapData(data string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Log the response status and body
 	bodyBytes, _ := ioutil.ReadAll(resp.Body) // Read response body for logging
 	logrus.Infof("Vault response for wrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 
@@ -98,32 +97,32 @@ func unwrapData(token string) (string, error) {
 	logrus.Infof("Vault response for unwrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 
 	if resp.StatusCode != http.StatusOK {
-		logrus.Warnf("Vault returned non-200 status: %d", resp.StatusCode)
-		return "", fmt.Errorf("vault returned non-200 status: %d", resp.StatusCode)
-	}
+        logrus.Warnf("Vault returned non-200 status: %d", resp.StatusCode)
+        return "", fmt.Errorf("vault returned non-200 status: %d", resp.StatusCode)
+    }
 
 	var result map[string]interface{}
 	
 	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		logrus.Error("Error decoding response from Vault: ", err)
-		return "", err
-	}
+	    logrus.Error("Error decoding response from Vault: ", err)
+	    return "", err
+    }
 
 	data, ok := result["data"].(map[string]interface{})
 	
 	if !ok {
-		logrus.Error("Unexpected response format from Vault")
-		return "", fmt.Errorf("unexpected response format")
-	}
+	    logrus.Error("Unexpected response format from Vault")
+	    return "", fmt.Errorf("unexpected response format")
+    }
 
 	unwrappedData, ok := data["data"].(string) // Assuming "data" contains the original text/code
 	if !ok {
-		logrus.Error("Data not found in Vault response")
-		return "", fmt.Errorf("data not found in response")
-	}
+	    logrus.Error("Data not found in Vault response")
+	    return "", fmt.Errorf("data not found in response")
+    }
 
 	logrus.Debug("Data unwrapped successfully")
 
-   // Return the unwrapped data as a string
-   return unwrappedData, nil
+    // Return the unwrapped data as a string
+    return unwrappedData, nil
 }
