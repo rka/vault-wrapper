@@ -34,6 +34,7 @@ func wrapData(data string) (string, error) {
 	}
 	req.Header.Set("X-Vault-Token", vaultToken)
 	req.Header.Set("Content-Type", "application/json") // Set content type
+	req.Header.Set("X-Vault-Wrap-TTL", "1h") // Set wrap TTL to 60 seconds (adjust as needed)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -84,7 +85,6 @@ func unwrapData(token string) (string, error) {
 	}
 	
 	req.Header.Set("X-Vault-Token", token) // Set the wrapped token as header
-	req.Header.Set("Content-Type", "application/json") // Set content type
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
