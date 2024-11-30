@@ -16,7 +16,7 @@ const secretId = process.env.SECRET_ID;
 
 let clientToken = null;
 
-// Authenticate with Vault using AppRole
+// Authenticate with Vault using AppRolee
 async function authenticateWithVault() {
   try {
     const response = await axios.post(`${vaultUrl}/v1/auth/approle/login`, {

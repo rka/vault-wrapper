@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  vault:
+    image: hashicorp/vault:1.13.2
+    container_name: vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    ports:
+      - "8200:8200"
+    command: vault server -dev
+    volumes:
+      - vault-data:/vault/data
+
+  vault-init:
+    image: hashicorp/vault:1.13.2
+    container_name: vault-init
+    depends_on:
+      - vault
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 &&
+      export VAULT_ADDR=http://vault:8200 &&
+      vault login root &&
+      vault auth enable approle &&
+      vault write auth/approle/role/test-role \
+        secret_id_ttl=60m \
+        token_ttl=60m \
+        token_policies=default &&
+      ROLE_ID=$(vault read -field=role_id auth/approle/role/test-role/role-id) &&
+      SECRET_ID=$(vault write -field=secret_id -f auth/approle/role/test-role/secret-id) &&
+      echo ROLE_ID=$ROLE_ID > /vault/config/app.env &&
+      echo SECRET_ID=$SECRET_ID >> /vault/config/app.env
+      "
+    volumes:
+      - vault-config:/vault/config
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: inline
+    container_name: vault-wrapper-backend
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+    env_file:
+      - /vault/config/app.env
+    depends_on:
+      - vault
+      - vault-init
+    ports:
+      - "3001:3000"
+    inline: |
+      FROM node:16
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm install
+      COPY . .
+      EXPOSE 3000
+      CMD ["node", "server.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: inline
+      args:
+        REACT_APP_BACKEND_URL: "http://localhost:3001"
+    container_name: vault-wrapper-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    inline: |
+      FROM node:16
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm install
+      COPY . .
+      ARG REACT_APP_BACKEND_URL
+      ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      RUN npm run build
+      EXPOSE 3000
+      CMD ["npx", "serve", "-s", "build"]
+
+volumes:
+  vault-data:
+  vault-config:
