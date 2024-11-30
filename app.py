@@ -1,11 +1,21 @@
-from flask import Flask, request, render_template, redirect, url_for
-import requests
 import logging
+from flask import Flask, request, render_template
+import requests
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create a console handler to output logs to the terminal
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(ch)
 
 app = Flask(__name__)
 
