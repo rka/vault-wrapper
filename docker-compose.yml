@@ -52,9 +52,9 @@ services:
       traefik.http.routers.vault-wrap-app.rule: Host(`webapp.rkaa.tech`)
       traefik.http.routers.vault-wrap-app.tls.certresolver: httpresolver
       traefik.http.services.vault-wrap-app.loadbalancer.server.port: 3001
-    volumes:
-      - /opt/vault/app:/app  # Mount backend for live debugging
-      - /opt/vault/build:/app/public  # Ensure build files are mounted
+    # volumes:
+    #   - /opt/vault/app:/app  # Mount backend for live debugging
+    #   - /opt/vault/build:/app/public  # Ensure build files are mounted
     depends_on:
       - vault
     networks:
