@@ -38,14 +38,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # ports:
-    #   - 8200:8200  # Expose Vault on the host for testing
+    ports:
+      - 8200:8200  # Expose Vault on the host for testing
 
   vault-wrap-app:
     build: .
     container_name: vault-wrap-app
-    # ports:
-    #   - "3001:3001"
+    ports:
+      - "3001:3001"
     labels:
       traefik.enable: true
       traefik.http.routers.vault-wrap-app.entrypoints: websecure
