@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	vaultAddr  = "http://vault:8200"
-	vaultToken = "root"
+	vaultAddr  = "http://vault:8200" // Define the Vault address
+	vaultToken = "root"               // Define the Vault token (consider using a safer method for production)
 )
 
 func init() {
@@ -72,4 +72,9 @@ func main() {
 	if err := http.ListenAndServe(":3001", nil); err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+// indexHandler serves the index.html file.
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/index.html")
 }

@@ -7,10 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./static/index.html")
-}
-
+// wrapHandler handles the wrapping of data.
 func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.Debug("Handling wrap request")
 	if r.Method != http.MethodPost {
@@ -28,7 +25,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := wrapData(data.Text) // Ensure this function is defined in vault_service.go
+	token, err := wrapData(data.Text) // Call to wrapData function
 	if err != nil {
 		logrus.Error("Error wrapping data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -39,6 +36,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
+// unwrapHandler handles the unwrapping of data.
 func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.Debug("Handling unwrap request")
 	if r.Method != http.MethodPost {
@@ -56,7 +54,7 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unwrappedData, err := unwrapData(data.Token) // Ensure this function is defined in vault_service.go
+	unwrappedData, err := unwrapData(data.Token) // Call to unwrapData function
 	if err != nil {
 		logrus.Error("Error unwrapping data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
