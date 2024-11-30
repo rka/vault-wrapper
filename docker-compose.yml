@@ -1,5 +1,45 @@
-version: "3"
 services:
+  vault:
+    restart: unless-stopped
+    container_name: vault
+    image: hashicorp/vault:latest
+    hostname: vault
+    environment:
+      - VAULT_DEV=true  # Enable dev mode for testing (insecure, use only for testing)
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_API_ADDR=http://localhost:8200
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    networks:
+      - saltbox
+    labels:
+      com.github.saltbox.saltbox_managed: true
+      traefik.enable: true
+      traefik.http.routers.vault-http.entrypoints: web  # Optional HTTP redirection
+      traefik.http.routers.vault-http.middlewares: globalHeaders@file,redirect-to-https@docker,crowdsec@docker
+      traefik.http.routers.vault-http.rule: Host(`vault.rkaa.tech`)
+      traefik.http.routers.vault-http.service: vault
+      traefik.http.routers.vault.entrypoints: websecure
+      traefik.http.routers.vault.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
+      traefik.http.routers.vault.rule: Host(`vault.rkaa.tech`)
+      traefik.http.routers.vault.service: vault
+      traefik.http.routers.vault.tls.certresolver: httpresolver
+      traefik.http.routers.vault.tls.options: securetls@file
+      traefik.http.services.vault.loadbalancer.server.port: 8200
+      traefik.http.services.vault-http.loadbalancer.server.port: 8200
+    volumes:
+      - /opt/vault:/vault/file  # Persistent storage for Vault data
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - 8200:8200  # Expose Vault on the host for testing
+
   vault-webapp:
     build:
       context: .
