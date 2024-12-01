@@ -87,15 +87,31 @@ function toggleNightMode() {
     const theme = document.body.classList.contains('night-mode') ? 'material-darker' : 'default';
     wrapEditor.setOption('theme', theme);
     unwrapResultEditor.setOption('theme', theme);
+
+    // Save preference in cookie
+    const mode = document.body.classList.contains('night-mode') ? 'dark' : 'light';
+    document.cookie = `theme=${mode};path=/;max-age=31536000`; // Expires in 1 year
 }
 
 // On page load, check if a token is in the URL and unwrap it
 window.onload = function() {
-    // Set initial mode classes
-    if (document.body.classList.contains('night-mode')) {
+    // Check for theme preference in cookies
+    const cookies = document.cookie.split(';').reduce((accumulator, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        accumulator[key] = value;
+        return accumulator;
+    }, {});
+
+    if (cookies.theme === 'dark') {
+        document.body.classList.add('night-mode');
         document.body.classList.remove('light-mode');
+        wrapEditor.setOption('theme', 'material-darker');
+        unwrapResultEditor.setOption('theme', 'material-darker');
     } else {
         document.body.classList.add('light-mode');
+        document.body.classList.remove('night-mode');
+        wrapEditor.setOption('theme', 'default');
+        unwrapResultEditor.setOption('theme', 'default');
     }
 
     const urlParams = new URLSearchParams(window.location.search);

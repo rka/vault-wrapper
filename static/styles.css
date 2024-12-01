@@ -37,6 +37,12 @@ body.night-mode {
     transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 h1, h2 {
     font-weight: 600;
 }
@@ -133,13 +139,6 @@ button:hover {
     border-radius: var(--border-radius);
     font-size: 0.9em;
     transition: background-color var(--transition-speed), border-color var(--transition-speed);
-}
-
-.mode-switch {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-bottom: 20px;
 }
 
 .theme-icon {
