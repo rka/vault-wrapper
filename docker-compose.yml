@@ -17,18 +17,18 @@ services:
       - saltbox
     labels:
       com.github.saltbox.saltbox_managed: true
-      traefik.enable: true
+      # traefik.enable: true
       # traefik.http.routers.vault-http.entrypoints: web  # Optional HTTP redirection
       # traefik.http.routers.vault-http.middlewares: globalHeaders@file,redirect-to-https@docker,crowdsec@docker
       # traefik.http.routers.vault-http.rule: Host(`vault.rkaa.tech`)
       # traefik.http.routers.vault-http.service: vault
-      traefik.http.routers.vault.entrypoints: websecure
-      traefik.http.routers.vault.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
-      traefik.http.routers.vault.rule: Host(`vault.rkaa.tech`)
+      # traefik.http.routers.vault.entrypoints: websecure
+      # traefik.http.routers.vault.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
+      # traefik.http.routers.vault.rule: Host(`vault.rkaa.tech`)
       # traefik.http.routers.vault.service: vault
-      traefik.http.routers.vault.tls.certresolver: httpresolver
+      # traefik.http.routers.vault.tls.certresolver: httpresolver
       # traefik.http.routers.vault.tls.options: securetls@file
-      traefik.http.services.vault.loadbalancer.server.port: 8200
+      # traefik.http.services.vault.loadbalancer.server.port: 8200
     volumes:
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
@@ -49,7 +49,7 @@ services:
       traefik.enable: true
       traefik.http.routers.vault-wrap-app.entrypoints: websecure
       traefik.http.routers.vault-wrap-app.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
-      traefik.http.routers.vault-wrap-app.rule: Host(`wrapper.rkaa.tech`)
+      traefik.http.routers.vault-wrap-app.rule: Host(`wrap.rkaa.tech`)
       traefik.http.routers.vault-wrap-app.tls.certresolver: httpresolver
       traefik.http.services.vault-wrap-app.loadbalancer.server.port: 3001
     depends_on:
