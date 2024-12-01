@@ -34,10 +34,14 @@ async function wrapData() {
 
         const data = await response.json();
         const wrappedTokenElement = document.getElementById('wrappedToken');
-        if (wrappedTokenElement) {
+        const wrappedLinkElement = document.getElementById('wrappedLink');
+        if (wrappedTokenElement && wrappedLinkElement) {
             wrappedTokenElement.value = data.token;
+            const url = new URL(window.location.href);
+            url.searchParams.set('token', data.token);
+            wrappedLinkElement.value = url.toString();
         } else {
-            console.error('Element with ID "wrappedToken" not found');
+            console.error('Wrapped token or link element not found');
         }
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
     } catch (error) {
@@ -45,8 +49,8 @@ async function wrapData() {
     }
 }
 
-async function unwrapData() {
-    const input = document.getElementById('unwrapInput').value;
+async function unwrapData(token) {
+    const input = token || document.getElementById('unwrapInput').value;
     const resultEditor = unwrapResultEditor;
 
     try {
@@ -77,10 +81,27 @@ function copyToClipboard(elementId) {
     });
 }
 
-// Night mode toggle
-document.getElementById('nightModeToggle').addEventListener('change', function() {
+function toggleNightMode() {
     document.body.classList.toggle('night-mode');
+    document.body.classList.toggle('light-mode');
     const theme = document.body.classList.contains('night-mode') ? 'material-darker' : 'default';
     wrapEditor.setOption('theme', theme);
     unwrapResultEditor.setOption('theme', theme);
-});
+}
+
+// On page load, check if a token is in the URL and unwrap it
+window.onload = function() {
+    // Set initial mode classes
+    if (document.body.classList.contains('night-mode')) {
+        document.body.classList.remove('light-mode');
+    } else {
+        document.body.classList.add('light-mode');
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+        document.getElementById('unwrapInput').value = token;
+        unwrapData(token);
+    }
+};

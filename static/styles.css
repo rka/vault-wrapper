@@ -45,7 +45,7 @@ h1, h2 {
     margin-bottom: 40px;
 }
 
-.code-editor, .token-display {
+.code-editor, .token-display, .link-display {
     margin-top: 10px;
 }
 
@@ -77,11 +77,6 @@ textarea, input[type="text"], input[type="number"] {
     box-sizing: border-box;
 }
 
-input[type="text"]#unwrapInput {
-    width: calc(100% - 100px); /* Adjust width to fit within container */
-    margin-right: 10px;
-}
-
 button {
     background-color: var(--primary-color);
     color: #fff;
@@ -97,26 +92,26 @@ button:hover {
     background-color: var(--primary-hover-color);
 }
 
-.token-display {
+.token-display, .link-display {
     margin-top: 20px;
 }
 
-.token-display label {
+.token-display label, .link-display label {
     display: block;
     margin-bottom: 5px;
 }
 
-.token-input {
+.token-input, .link-input {
     position: relative;
 }
 
-.token-input input {
+.token-input input, .link-input input {
     width: 100%;
     padding-right: 30px; /* Space for the copy icon */
     cursor: pointer;
 }
 
-.token-input .copy-icon {
+.token-input .copy-icon, .link-input .copy-icon {
     position: absolute;
     top: 50%;
     right: 10px;
@@ -126,7 +121,7 @@ button:hover {
     color: var(--text-color);
 }
 
-.token-input .copy-icon:hover {
+.token-input .copy-icon:hover, .link-input .copy-icon:hover {
     color: var(--primary-color);
 }
 
@@ -147,50 +142,30 @@ button:hover {
     margin-bottom: 20px;
 }
 
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    margin-right: 10px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
+.theme-icon {
+    width: 30px;
+    height: 30px;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: var(--border-radius);
+    background-size: cover;
+    transition: background-image var(--transition-speed);
 }
 
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
+body.light-mode .theme-icon {
+    background-image: url('/static/moon-icon.png');
 }
 
-input:checked + .slider {
-    background-color: var(--primary-color);
+body.night-mode .theme-icon {
+    background-image: url('/static/sun-icon.png');
 }
 
-input:checked + .slider:before {
-    transform: translateX(26px);
+.unwrap-input-group {
+    display: flex;
+    align-items: center;
+}
+
+.unwrap-input-group input[type="text"] {
+    flex: 1;
+    margin-right: 10px;
 }
 
 body.night-mode .CodeMirror {

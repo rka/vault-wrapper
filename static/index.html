@@ -34,11 +34,7 @@
     <div class="container">
         <h1>Vault Data Wrapper</h1>
         <div class="mode-switch">
-            <label class="switch">
-                <input type="checkbox" id="nightModeToggle">
-                <span class="slider round"></span>
-            </label>
-            <span>Night Mode</span>
+            <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()"></span>
         </div>
         
         <div class="wrap-section">
@@ -50,7 +46,7 @@
                 <input type="number" id="ttl" value="60" min="1">
             </div>
             <button onclick="wrapData()">Wrap</button>
-            <!-- Display Wrapped Token -->
+            <!-- Display Wrapped Token and URL -->
             <div class="token-display">
                 <label for="wrappedToken">Wrapped Token:</label>
                 <div class="token-input">
@@ -58,13 +54,22 @@
                     <span class="copy-icon" onclick="copyToClipboard('wrappedToken')">&#128203;</span>
                 </div>
             </div>
+            <div class="link-display">
+                <label for="wrappedLink">Shareable Link:</label>
+                <div class="link-input">
+                    <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Click to copy link">
+                    <span class="copy-icon" onclick="copyToClipboard('wrappedLink')">&#128203;</span>
+                </div>
+            </div>
             <div id="wrapDetails" class="details-box"></div>
         </div>
 
         <div class="unwrap-section">
             <h2>Unwrap Data</h2>
-            <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
-            <button onclick="unwrapData()">Unwrap</button>
+            <div class="unwrap-input-group">
+                <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
+                <button onclick="unwrapData()">Unwrap</button>
+            </div>
             <!-- CodeMirror Editor for Output -->
             <div id="unwrapResult" class="code-editor"></div>
         </div>
