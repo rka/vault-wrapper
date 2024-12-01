@@ -74,6 +74,12 @@ textarea, input[type="text"], input[type="number"] {
     background-color: var(--container-background);
     color: var(--text-color);
     transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
+    box-sizing: border-box;
+}
+
+input[type="text"]#unwrapInput {
+    width: calc(100% - 100px); /* Adjust width to fit within container */
+    margin-right: 10px;
 }
 
 button {
@@ -92,26 +98,36 @@ button:hover {
 }
 
 .token-display {
-    display: flex;
-    align-items: center;
     margin-top: 20px;
 }
 
 .token-display label {
-    flex: 0 0 120px;
+    display: block;
+    margin-bottom: 5px;
 }
 
-.token-display input {
-    flex: 1;
-    margin-right: 10px;
+.token-input {
+    position: relative;
 }
 
-#copyToken {
-    background-color: var(--secondary-color);
+.token-input input {
+    width: 100%;
+    padding-right: 30px; /* Space for the copy icon */
+    cursor: pointer;
 }
 
-#copyToken:hover {
-    background-color: var(--secondary-hover-color);
+.token-input .copy-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--text-color);
+}
+
+.token-input .copy-icon:hover {
+    color: var(--primary-color);
 }
 
 .details-box {

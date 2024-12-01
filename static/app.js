@@ -72,9 +72,7 @@ async function unwrapData() {
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
     const text = element.value;
-    navigator.clipboard.writeText(text).then(() => {
-        alert('Token copied to clipboard!');
-    }).catch(err => {
+    navigator.clipboard.writeText(text).catch(err => {
         console.error('Failed to copy text: ', err);
     });
 }
