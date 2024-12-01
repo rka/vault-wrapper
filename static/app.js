@@ -28,7 +28,12 @@ async function wrapData() {
         }
 
         const data = await response.json();
-        document.getElementById('wrappedToken').textContent = data.token;
+        const wrappedTokenElement = document.getElementById('wrappedToken');
+        if (wrappedTokenElement) {
+            wrappedTokenElement.textContent = data.token;
+        } else {
+            console.error('Element with ID "wrappedToken" not found');
+        }
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
         highlightCode(detailsDiv);
     } catch (error) {
