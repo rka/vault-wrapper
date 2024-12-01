@@ -6,10 +6,18 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
 </head>
 <body>
     <div class="container">
         <h1>Vault Data Wrapper</h1>
+        <div class="mode-switch">
+            <label class="switch">
+                <input type="checkbox" id="nightModeToggle">
+                <span class="slider round"></span>
+            </label>
+            <span>Night Mode</span>
+        </div>
         
         <div class="wrap-section">
             <h2>Wrap Data</h2>
@@ -19,7 +27,11 @@
                 <input type="number" id="ttl" value="60" min="1">
             </div>
             <button onclick="wrapData()">Wrap</button>
-            <div id="wrapResult" class="result-box"></div>
+            <div id="wrapResult" class="result-box">
+                <pre><code id="wrappedToken"></code></pre>
+                <button id="copyToken" onclick="copyToClipboard('wrappedToken')">Copy Token</button>
+            </div>
+            <div id="wrapDetails" class="details-box"></div>
         </div>
 
         <div class="unwrap-section">

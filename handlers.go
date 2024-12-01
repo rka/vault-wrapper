@@ -29,7 +29,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := wrapData(data.Text, data.TTL)
+	token, details, err := wrapData(data.Text, data.TTL)
 	if err != nil {
 		logrus.Error("Error wrapping data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -37,33 +37,36 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logrus.Debug("Data wrapped successfully")
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"token":   token,
+		"details": details,
+	})
 }
 
 func unwrapHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Handling unwrap request")
-	if r.Method != http.MethodPost {
-		logrus.Warn("Method not allowed for unwrap request")
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+    logrus.Debug("Handling unwrap request")
+    if r.Method != http.MethodPost {
+        logrus.Warn("Method not allowed for unwrap request")
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
 
-	var data struct {
-		Token string `json:"token"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		logrus.Error("Error decoding unwrap request body: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+    var data struct {
+        Token string `json:"token"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+        logrus.Error("Error decoding unwrap request body: ", err)
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
 
-	unwrappedData, err := unwrapData(data.Token)
-	if err != nil {
-		logrus.Error("Error unwrapping data: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    unwrappedData, err := unwrapData(data.Token)
+    if err != nil {
+        logrus.Error("Error unwrapping data: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
 
-	logrus.Debug("Data unwrapped successfully")
-	json.NewEncoder(w).Encode(map[string]string{"data": unwrappedData})
+    logrus.Debug("Data unwrapped successfully")
+    json.NewEncoder(w).Encode(map[string]string{"data": unwrappedData})
 }
