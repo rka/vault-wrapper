@@ -11,16 +11,14 @@ import (
 )
 
 // const (
-// 	vaultAddr  = "http://vault:8200" // Define the Vault address
-// 	vaultToken = "root"               // Define the Vault token (consider using a safer method for production)
+// 	vaultAddr  = "http://vault:8200"
+// 	vaultToken = "root"
 // )
 
-// wrapData wraps the provided data using Vault's wrapping functionality.
-func wrapData(data string) (string, error) {
+func wrapData(data string, ttl string) (string, error) {
 	logrus.Debug("Wrapping data")
 
-	// Create a map to hold the data for wrapping
-	payload := map[string]interface{}{"data": data} // Use interface{} to allow any type
+	payload := map[string]interface{}{"data": data}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		logrus.Error("Error marshalling JSON payload: ", err)
@@ -33,8 +31,8 @@ func wrapData(data string) (string, error) {
 		return "", err
 	}
 	req.Header.Set("X-Vault-Token", vaultToken)
-	req.Header.Set("Content-Type", "application/json") // Set content type
-	req.Header.Set("X-Vault-Wrap-TTL", "1h") // Set wrap TTL to 60 seconds (adjust as needed)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Vault-Wrap-TTL", ttl)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -44,7 +42,7 @@ func wrapData(data string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := ioutil.ReadAll(resp.Body) // Read response body for logging
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	logrus.Infof("Vault response for wrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 
 	if resp.StatusCode != http.StatusOK {
@@ -74,7 +72,6 @@ func wrapData(data string) (string, error) {
 	return token, nil
 }
 
-// unwrapData unwraps the provided token using Vault's unwrapping functionality.
 func unwrapData(token string) (string, error) {
 	logrus.Debug("Unwrapping data")
 
@@ -84,7 +81,7 @@ func unwrapData(token string) (string, error) {
 		return "", err
 	}
 	
-	req.Header.Set("X-Vault-Token", token) // Set the wrapped token as header
+	req.Header.Set("X-Vault-Token", token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -95,7 +92,7 @@ func unwrapData(token string) (string, error) {
 	
 	defer resp.Body.Close()
 
-	bodyBytes, _ := ioutil.ReadAll(resp.Body) // Read response body for logging
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	logrus.Infof("Vault response for unwrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 
 	if resp.StatusCode != http.StatusOK {
@@ -117,14 +114,12 @@ func unwrapData(token string) (string, error) {
 	    return "", fmt.Errorf("unexpected response format")
     }
 
-	unwrappedData, ok := data["data"].(string) // Assuming "data" contains the original text/code
+	unwrappedData, ok := data["data"].(string)
 	if !ok {
 	    logrus.Error("Data not found in Vault response")
 	    return "", fmt.Errorf("data not found in response")
     }
 
 	logrus.Debug("Data unwrapped successfully")
-
-    // Return the unwrapped data as a string
     return unwrappedData, nil
 }

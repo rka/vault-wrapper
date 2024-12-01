@@ -1,5 +1,16 @@
+function highlightCode(element) {
+    element.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+    });
+}
+
+function wrapInCodeTags(text) {
+    return `<pre><code>${text}</code></pre>`;
+}
+
 async function wrapData() {
     const input = document.getElementById('wrapInput').value;
+    const ttl = document.getElementById('ttl').value;
     const resultDiv = document.getElementById('wrapResult');
 
     try {
@@ -8,7 +19,7 @@ async function wrapData() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text: input })
+            body: JSON.stringify({ text: input, ttl: ttl })
         });
 
         if (!response.ok) {
@@ -16,7 +27,7 @@ async function wrapData() {
         }
 
         const data = await response.json();
-        resultDiv.textContent = `Wrapped Token: ${data.token}`;
+        resultDiv.innerHTML = `Wrapped Token: ${data.token}`;
     } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
     }
@@ -40,8 +51,19 @@ async function unwrapData() {
         }
 
         const data = await response.json();
-        resultDiv.textContent = `Unwrapped Data: ${data.data}`;
+        resultDiv.innerHTML = wrapInCodeTags(data.data);
+        highlightCode(resultDiv);
     } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
     }
 }
+
+// Highlight input as user types
+document.getElementById('wrapInput').addEventListener('input', function() {
+    const wrappedText = wrapInCodeTags(this.value);
+    document.getElementById('wrapResult').innerHTML = wrappedText;
+    highlightCode(document.getElementById('wrapResult'));
+});
+
+// Initial highlight
+highlightCode(document);

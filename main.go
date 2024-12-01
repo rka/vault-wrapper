@@ -74,7 +74,7 @@ func main() {
 	}
 }
 
-// indexHandler serves the index.html file.
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./static/index.html")
-}
+// // indexHandler serves the index.html file.
+// func indexHandler(w http.ResponseWriter, r *http.Request) {
+// 	http.ServeFile(w, r, "./static/index.html")
+// }
