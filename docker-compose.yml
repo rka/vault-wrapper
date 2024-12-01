@@ -39,19 +39,26 @@ services:
     # ports:
     #   - 8200:8200  # Expose Vault on the host for testing
 
-  vault-wrap-app:
+  wrap:
     build: .
-    container_name: vault-wrap-app
+    container_name: wrap
+    hostname: wrap
     # ports:
     #   - "3001:3001"
     labels:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true
-      traefik.http.routers.vault-wrap-app.entrypoints: websecure
-      traefik.http.routers.vault-wrap-app.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
-      traefik.http.routers.vault-wrap-app.rule: Host(`wrap.rkaa.tech`)
-      traefik.http.routers.vault-wrap-app.tls.certresolver: httpresolver
-      traefik.http.services.vault-wrap-app.loadbalancer.server.port: 3001
+      traefik.http.routers.wrap-http.entrypoints: web
+      traefik.http.routers.wrap-http.middlewares: globalHeaders@file,redirect-to-https@docker,robotHeaders@file
+      traefik.http.routers.wrap-http.rule: Host(`wrap.rkaa.tech`)
+      traefik.http.routers.wrap-http.service: wrap
+      traefik.http.routers.wrap.entrypoints: websecure
+      traefik.http.routers.wrap.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file
+      traefik.http.routers.wrap.rule: Host(`wrap.rkaa.tech`)
+      traefik.http.routers.wrap.service: wrap
+      traefik.http.routers.wrap.tls.certresolver: httpresolver
+      traefik.http.routers.wrap.tls.options: securetls@file
+      traefik.http.services.wrap.loadbalancer.server.port: 3001
     depends_on:
       - vault
     networks:
