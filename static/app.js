@@ -1,17 +1,22 @@
-function highlightCode(element) {
-    element.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightBlock(block);
-    });
-}
+// Initialize CodeMirror editors
+let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
+    lineNumbers: true,
+    mode: 'javascript',
+    theme: 'default',
+    lineWrapping: true
+});
 
-function wrapInCodeTags(text) {
-    return `<pre><code>${text}</code></pre>`;
-}
+let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
+    lineNumbers: true,
+    mode: 'javascript',
+    theme: 'default',
+    readOnly: true,
+    lineWrapping: true
+});
 
 async function wrapData() {
-    const input = document.getElementById('wrapInput').value;
+    const input = wrapEditor.getValue();
     const ttl = document.getElementById('ttl').value;
-    const resultDiv = document.getElementById('wrapResult');
     const detailsDiv = document.getElementById('wrapDetails');
 
     try {
@@ -30,21 +35,19 @@ async function wrapData() {
         const data = await response.json();
         const wrappedTokenElement = document.getElementById('wrappedToken');
         if (wrappedTokenElement) {
-            wrappedTokenElement.textContent = data.token;
+            wrappedTokenElement.value = data.token;
         } else {
             console.error('Element with ID "wrappedToken" not found');
         }
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
-        highlightCode(detailsDiv);
     } catch (error) {
-        resultDiv.textContent = `Error: ${error.message}`;
-        detailsDiv.textContent = '';
+        detailsDiv.textContent = `Error: ${error.message}`;
     }
 }
 
 async function unwrapData() {
     const input = document.getElementById('unwrapInput').value;
-    const resultDiv = document.getElementById('unwrapResult');
+    const resultEditor = unwrapResultEditor;
 
     try {
         const response = await fetch('/unwrap', {
@@ -60,16 +63,15 @@ async function unwrapData() {
         }
 
         const data = await response.json();
-        resultDiv.innerHTML = wrapInCodeTags(data.data);
-        highlightCode(resultDiv);
+        resultEditor.setValue(data.data);
     } catch (error) {
-        resultDiv.textContent = `Error: ${error.message}`;
+        resultEditor.setValue(`Error: ${error.message}`);
     }
 }
 
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
-    const text = element.textContent;
+    const text = element.value;
     navigator.clipboard.writeText(text).then(() => {
         alert('Token copied to clipboard!');
     }).catch(err => {
@@ -77,17 +79,10 @@ function copyToClipboard(elementId) {
     });
 }
 
-// Highlight input as user types
-document.getElementById('wrapInput').addEventListener('input', function() {
-    const wrappedText = wrapInCodeTags(this.value);
-    document.getElementById('wrapResult').innerHTML = wrappedText;
-    highlightCode(document.getElementById('wrapResult'));
-});
-
 // Night mode toggle
 document.getElementById('nightModeToggle').addEventListener('change', function() {
     document.body.classList.toggle('night-mode');
+    const theme = document.body.classList.contains('night-mode') ? 'material-darker' : 'default';
+    wrapEditor.setOption('theme', theme);
+    unwrapResultEditor.setOption('theme', theme);
 });
-
-// Initial highlight
-highlightCode(document);
