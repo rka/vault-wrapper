@@ -42,8 +42,8 @@ services:
   vault-wrap-app:
     build: .
     container_name: vault-wrap-app
-    ports:
-      - "3001:3001"
+    # ports:
+    #   - "3001:3001"
     labels:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true
