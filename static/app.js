@@ -152,6 +152,7 @@ async function unwrapData(token) {
         resultContainer.innerHTML = '';
         resultContainer.appendChild(resultEditor.getScrollerElement());
 
+        // Check if data contains file and/or text
         if (data.file) {
             // Reconstruct file from Base64 data
             const blob = base64ToBlob(data.file.data, data.file.type);
@@ -179,6 +180,7 @@ async function unwrapData(token) {
         resultEditor.setValue(`Error: ${error.message}`);
     }
 }
+
 
 // Helper function to convert Base64 to Blob
 function base64ToBlob(base64, type) {

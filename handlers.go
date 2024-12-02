@@ -68,14 +68,22 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    dataString, err := unwrapData(input.Token)
+    dataMap, err := unwrapData(input.Token)
     if err != nil {
         logrus.Error("Error unwrapping data: ", err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
-    var data map[string]interface{}
+    // The data is stored under the "data" key
+    dataString, ok := dataMap["data"].(string)
+    if !ok {
+        logrus.Error("Error retrieving unwrapped data")
+        http.Error(w, "Error retrieving unwrapped data", http.StatusInternalServerError)
+        return
+    }
+
+    var data interface{}
     if err := json.Unmarshal([]byte(dataString), &data); err != nil {
         logrus.Error("Error unmarshalling data: ", err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
