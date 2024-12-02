@@ -145,25 +145,28 @@ async function unwrapData(token) {
         }
 
         const data = await response.json();
+        console.log('Unwrapped data:', data);
 
         // Clear previous content
         resultEditor.setValue('');
-        const resultContainer = resultEditor.getWrapperElement();
+        const resultContainer = document.getElementById('unwrapResultContainer');
         resultContainer.innerHTML = ''; // Clear previous results
-        resultContainer.appendChild(resultEditor.getScrollerElement());
+
+        let contentAdded = false;
 
         if (data.file) {
-            // Create a file bubble
+            console.log('File data found:', data.file);
+            // Reconstruct file from Base64 data
+            const blob = base64ToBlob(data.file.data, data.file.type);
+            const url = URL.createObjectURL(blob);
+
+            // Create file bubble
             const fileBubble = document.createElement('div');
             fileBubble.className = 'file-bubble';
             fileBubble.textContent = `📄 ${data.file.name}`;
             fileBubble.title = 'Click to download';
 
-            // Reconstruct file from Base64 data
-            const blob = base64ToBlob(data.file.data, data.file.type);
-            const url = URL.createObjectURL(blob);
-
-            // Attach click event to download the file
+            // Attach click event
             fileBubble.addEventListener('click', () => {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = url;
@@ -171,15 +174,24 @@ async function unwrapData(token) {
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(url); // Clean up the URL object
+                URL.revokeObjectURL(url);
             });
 
             resultContainer.appendChild(fileBubble);
+            contentAdded = true;
         }
 
         if (data.text) {
+            console.log('Text data found:', data.text);
             // Display text data
             resultEditor.setValue(data.text);
+            resultContainer.appendChild(resultEditor.getWrapperElement());
+            contentAdded = true;
+        }
+
+        if (!contentAdded) {
+            resultEditor.setValue('No data found.');
+            resultContainer.appendChild(resultEditor.getWrapperElement());
         }
 
         unwrapSuccess.textContent = 'Data unwrapped successfully!';
@@ -188,10 +200,10 @@ async function unwrapData(token) {
             unwrapSuccess.style.display = 'none';
         }, 3000);
     } catch (error) {
+        console.error('Error during unwrapping:', error);
         resultEditor.setValue(`Error: ${error.message}`);
     }
 }
-
 
 // Helper function to convert Base64 to Blob
 function base64ToBlob(base64, type) {

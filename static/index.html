@@ -18,9 +18,7 @@
     <div class="container">
         <div class="header">
             <h1>Vault Data Wrapper</h1>
-            <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()">
-                <!-- Moon/Sun Icon -->
-            </span>
+            <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()"></span>
         </div>
 
         <div class="wrap-section">
@@ -64,8 +62,10 @@
             </div>
             <!-- Success Message -->
             <div id="unwrapSuccess" class="success-message" style="display: none;">Data unwrapped successfully!</div>
-            <!-- CodeMirror Editor for Output -->
-            <div id="unwrapResult" class="code-editor"></div>
+            <!-- Unwrap Result Container -->
+            <div id="unwrapResultContainer">
+                <div id="unwrapResult" class="code-editor"></div>
+            </div>
         </div>
     </div>
 
