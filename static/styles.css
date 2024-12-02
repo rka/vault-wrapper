@@ -241,3 +241,8 @@ body.night-mode .CodeMirror {
 .file-bubble:hover {
     background-color: var(--secondary-hover-color);
 }
+
+/* Wrap File Bubble Container */
+#wrapFileBubbleContainer {
+    margin-top: 10px;
+}

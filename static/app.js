@@ -73,14 +73,29 @@ function handleFileUpload(file) {
             type: file.type,
             data: base64Data
         };
-        // Inform the user that a file is ready
-        wrapSuccess.textContent = `File "${file.name}" is ready to be wrapped.`;
-        wrapSuccess.style.display = 'block';
-        setTimeout(() => {
-            wrapSuccess.style.display = 'none';
-        }, 3000);
+        // Display the file bubble in the wrap section
+        displayWrapFileBubble(uploadedFile);
     };
     reader.readAsDataURL(file);
+}
+
+// Display the file bubble in the wrap section
+function displayWrapFileBubble(file) {
+    const wrapFileBubbleContainer = document.getElementById('wrapFileBubbleContainer');
+    wrapFileBubbleContainer.innerHTML = ''; // Clear previous content
+
+    const fileBubble = document.createElement('div');
+    fileBubble.className = 'file-bubble';
+    fileBubble.textContent = `📄 ${file.name}`;
+    fileBubble.title = 'Click to remove';
+
+    // Attach click event to remove the file
+    fileBubble.addEventListener('click', () => {
+        uploadedFile = null;
+        wrapFileBubbleContainer.innerHTML = '';
+    });
+
+    wrapFileBubbleContainer.appendChild(fileBubble);
 }
 
 async function wrapData() {
@@ -88,12 +103,20 @@ async function wrapData() {
     const ttl = document.getElementById('ttl').value;
     const detailsDiv = document.getElementById('wrapDetails');
 
-    let dataObj = {
-        text: inputText
-    };
+    let dataObj = {};
+
+    // Include text only if it's not empty
+    if (inputText.trim() !== '') {
+        dataObj.text = inputText;
+    }
 
     if (uploadedFile) {
         dataObj.file = uploadedFile;
+    }
+
+    if (Object.keys(dataObj).length === 0) {
+        alert('Please enter text or upload a file to wrap.');
+        return;
     }
 
     try {
@@ -120,8 +143,9 @@ async function wrapData() {
         setTimeout(() => {
             wrapSuccess.style.display = 'none';
         }, 3000);
-        // Reset uploaded file after wrapping
+        // Reset uploaded file and clear file bubble after wrapping
         uploadedFile = null;
+        document.getElementById('wrapFileBubbleContainer').innerHTML = '';
     } catch (error) {
         detailsDiv.textContent = `Error: ${error.message}`;
     }
@@ -147,10 +171,12 @@ async function unwrapData(token) {
         const data = await response.json();
         console.log('Unwrapped data:', data);
 
+        // Get containers
+        const fileBubbleContainer = document.getElementById('fileBubbleContainer');
+
         // Clear previous content
         resultEditor.setValue('');
-        const resultContainer = document.getElementById('unwrapResultContainer');
-        resultContainer.innerHTML = ''; // Clear previous results
+        fileBubbleContainer.innerHTML = '';
 
         let contentAdded = false;
 
@@ -177,7 +203,7 @@ async function unwrapData(token) {
                 URL.revokeObjectURL(url);
             });
 
-            resultContainer.appendChild(fileBubble);
+            fileBubbleContainer.appendChild(fileBubble);
             contentAdded = true;
         }
 
@@ -185,13 +211,16 @@ async function unwrapData(token) {
             console.log('Text data found:', data.text);
             // Display text data
             resultEditor.setValue(data.text);
-            resultContainer.appendChild(resultEditor.getWrapperElement());
+            resultEditor.getWrapperElement().style.display = 'block';
             contentAdded = true;
+        } else {
+            // Hide the editor if no text is present
+            resultEditor.getWrapperElement().style.display = 'none';
         }
 
         if (!contentAdded) {
             resultEditor.setValue('No data found.');
-            resultContainer.appendChild(resultEditor.getWrapperElement());
+            resultEditor.getWrapperElement().style.display = 'block';
         }
 
         unwrapSuccess.textContent = 'Data unwrapped successfully!';
@@ -202,6 +231,7 @@ async function unwrapData(token) {
     } catch (error) {
         console.error('Error during unwrapping:', error);
         resultEditor.setValue(`Error: ${error.message}`);
+        resultEditor.getWrapperElement().style.display = 'block';
     }
 }
 
