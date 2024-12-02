@@ -18,18 +18,18 @@
     <div class="container">
         <div class="header">
             <h1>Vault Data Wrapper</h1>
-            <div class="info-icon" title="Vault Data Wrapper allows you to securely wrap and share data or files using Hashicorp Vault. You can drag and drop files or enter text/code to wrap. Generated tokens can be shared via URL or directly.">
-                &#9432;
-            </div>
-            <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()"></span>
+            <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()">
+                <!-- Moon/Sun Icon -->
+            </span>
         </div>
-        
+
         <div class="wrap-section">
-            <h2>Wrap Data</h2>
+            <h2>Wrap Data <span class="info-icon" title="You can wrap text or code by entering it below. To upload a file, click the paperclip icon or drag and drop the file.">ℹ️</span></h2>
             <!-- Wrap Input with Drop Zone -->
             <div id="dropZone" class="drop-zone">
                 <div id="wrapInput" class="code-editor"></div>
-                <div id="uploadMessage" class="upload-message">Drag & drop a file here, or click to select a file.</div>
+                <!-- Paperclip Icon for File Upload -->
+                <span id="fileUploadIcon" class="file-upload-icon" title="Click to upload a file">📎</span>
             </div>
             <div class="ttl-input">
                 <label for="ttl">TTL (in seconds):</label>
@@ -43,21 +43,21 @@
                 <label for="wrappedToken">Wrapped Token:</label>
                 <div class="token-input">
                     <input type="text" id="wrappedToken" readonly onclick="copyToClipboard('wrappedToken')" placeholder="Click to copy token">
-                    <span class="copy-icon" onclick="copyToClipboard('wrappedToken')">&#128203;</span>
+                    <span class="copy-icon" onclick="copyToClipboard('wrappedToken')">📋</span>
                 </div>
             </div>
             <div class="link-display">
                 <label for="wrappedLink">Shareable Link:</label>
                 <div class="link-input">
                     <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Click to copy link">
-                    <span class="copy-icon" onclick="copyToClipboard('wrappedLink')">&#128203;</span>
+                    <span class="copy-icon" onclick="copyToClipboard('wrappedLink')">📋</span>
                 </div>
             </div>
             <div id="wrapDetails" class="details-box"></div>
         </div>
 
         <div class="unwrap-section">
-            <h2>Unwrap Data</h2>
+            <h2>Unwrap Data <span class="info-icon" title="Enter a wrapped token to unwrap and retrieve the original data or file.">ℹ️</span></h2>
             <div class="unwrap-input-group">
                 <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
                 <button onclick="unwrapData()">Unwrap</button>

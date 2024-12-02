@@ -145,16 +145,18 @@ button:hover {
     width: 30px;
     height: 30px;
     cursor: pointer;
-    background-size: cover;
-    transition: background-image var(--transition-speed);
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-body.light-mode .theme-icon {
-    background-image: url('/static/moon-icon.png');
+body.light-mode .theme-icon::after {
+    content: '🌙'; /* Moon icon */
 }
 
-body.night-mode .theme-icon {
-    background-image: url('/static/sun-icon.png');
+body.night-mode .theme-icon::after {
+    content: '☀️'; /* Sun icon */
 }
 
 .unwrap-input-group {
@@ -174,8 +176,8 @@ body.night-mode .CodeMirror {
 
 /* Drop Zone Styles */
 .drop-zone {
-    border: 2px dashed var(--border-color);
-    padding: 10px;
+    border: 1px solid var(--border-color);
+    padding: 0;
     border-radius: var(--border-radius);
     position: relative;
     transition: background-color 0.3s;
@@ -185,10 +187,38 @@ body.night-mode .CodeMirror {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-.upload-message {
-    text-align: center;
-    color: var(--text-color);
+/* File Upload Icon */
+.file-upload-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 1.5em;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity var(--transition-speed);
+}
+
+.file-upload-icon:hover {
+    opacity: 1;
+}
+
+/* Success Message Styles */
+.success-message {
+    color: var(--secondary-color);
+    font-weight: bold;
     margin-top: 10px;
+}
+
+/* Info Icon Styles */
+.info-icon {
+    font-size: 1em;
+    cursor: help;
+    margin-left: 5px;
+    color: var(--primary-color);
+}
+
+.info-icon:hover {
+    color: var(--primary-hover-color);
 }
 
 /* Download Link Styles */
@@ -205,23 +235,4 @@ body.night-mode .CodeMirror {
 
 .download-link:hover {
     background-color: var(--secondary-hover-color);
-}
-
-/* Success Message Styles */
-.success-message {
-    color: var(--secondary-color);
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-/* Info Icon Styles */
-.info-icon {
-    font-size: 1.5em;
-    cursor: help;
-    margin-right: 10px;
-    color: var(--primary-color);
-}
-
-.info-icon:hover {
-    color: var(--primary-hover-color);
 }

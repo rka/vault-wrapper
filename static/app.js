@@ -14,9 +14,14 @@ let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
     lineWrapping: true
 });
 
-// Get the drop zone element
+// Get elements
 const dropZone = document.getElementById('dropZone');
-const uploadMessage = document.getElementById('uploadMessage');
+const fileUploadIcon = document.getElementById('fileUploadIcon');
+const wrapSuccess = document.getElementById('wrapSuccess');
+const unwrapSuccess = document.getElementById('unwrapSuccess');
+
+// Variable to hold uploaded file data
+let uploadedFile = null;
 
 // Handle drag over
 dropZone.addEventListener('dragover', (event) => {
@@ -39,8 +44,8 @@ dropZone.addEventListener('drop', (event) => {
     }
 });
 
-// Handle click to select file
-dropZone.addEventListener('click', () => {
+// Handle file upload icon click
+fileUploadIcon.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.onchange = () => {
@@ -62,34 +67,33 @@ function handleFileUpload(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
-        const fileData = {
+        uploadedFile = {
             isFile: true,
             name: file.name,
             type: file.type,
             data: base64Data
         };
-        // Display file data in the editor as a JSON string
-        wrapEditor.setValue(JSON.stringify(fileData, null, 2));
-        uploadMessage.textContent = `File "${file.name}" ready to wrap.`;
+        // Inform the user that a file is ready
+        wrapSuccess.textContent = `File "${file.name}" is ready to be wrapped.`;
+        wrapSuccess.style.display = 'block';
+        setTimeout(() => {
+            wrapSuccess.style.display = 'none';
+        }, 3000);
     };
     reader.readAsDataURL(file);
 }
 
 async function wrapData() {
-    let inputData = wrapEditor.getValue();
+    const inputText = wrapEditor.getValue();
     const ttl = document.getElementById('ttl').value;
     const detailsDiv = document.getElementById('wrapDetails');
-    const wrapSuccess = document.getElementById('wrapSuccess');
 
-    let dataObj;
-    try {
-        dataObj = JSON.parse(inputData);
-    } catch (e) {
-        // Treat input as plain text
-        dataObj = {
-            isFile: false,
-            text: inputData
-        };
+    let dataObj = {
+        text: inputText
+    };
+
+    if (uploadedFile) {
+        dataObj.file = uploadedFile;
     }
 
     try {
@@ -111,10 +115,13 @@ async function wrapData() {
         url.searchParams.set('token', data.token);
         document.getElementById('wrappedLink').value = url.toString();
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
+        wrapSuccess.textContent = 'Data wrapped successfully!';
         wrapSuccess.style.display = 'block';
         setTimeout(() => {
             wrapSuccess.style.display = 'none';
         }, 3000);
+        // Reset uploaded file after wrapping
+        uploadedFile = null;
     } catch (error) {
         detailsDiv.textContent = `Error: ${error.message}`;
     }
@@ -123,7 +130,6 @@ async function wrapData() {
 async function unwrapData(token) {
     const input = token || document.getElementById('unwrapInput').value;
     const resultEditor = unwrapResultEditor;
-    const unwrapSuccess = document.getElementById('unwrapSuccess');
 
     try {
         const response = await fetch('/unwrap', {
@@ -140,24 +146,31 @@ async function unwrapData(token) {
 
         const data = await response.json();
 
-        if (data.isFile) {
+        resultEditor.setValue('');
+        // Clear previous content
+        const resultContainer = resultEditor.getWrapperElement();
+        resultContainer.innerHTML = '';
+        resultContainer.appendChild(resultEditor.getScrollerElement());
+
+        if (data.file) {
             // Reconstruct file from Base64 data
-            const blob = base64ToBlob(data.data, data.type);
+            const blob = base64ToBlob(data.file.data, data.file.type);
             const url = URL.createObjectURL(blob);
             // Create download link
             const downloadLink = document.createElement('a');
             downloadLink.href = url;
-            downloadLink.download = data.name;
-            downloadLink.textContent = `Download ${data.name}`;
+            downloadLink.download = data.file.name;
+            downloadLink.textContent = `Download ${data.file.name}`;
             downloadLink.className = 'download-link';
-            // Clear editor and display download link
-            resultEditor.setValue('');
-            resultEditor.getWrapperElement().appendChild(downloadLink);
-        } else {
+            resultContainer.appendChild(downloadLink);
+        }
+
+        if (data.text) {
             // Display text data
             resultEditor.setValue(data.text);
         }
 
+        unwrapSuccess.textContent = 'Data unwrapped successfully!';
         unwrapSuccess.style.display = 'block';
         setTimeout(() => {
             unwrapSuccess.style.display = 'none';
