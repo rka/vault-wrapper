@@ -162,11 +162,16 @@ body.night-mode .theme-icon::after {
 .unwrap-input-group {
     display: flex;
     align-items: center;
+    margin-top: 10px; /* Add margin for consistency */
 }
 
 .unwrap-input-group input[type="text"] {
     flex: 1;
     margin-right: 10px;
+}
+
+.unwrap-input-group button {
+    flex-shrink: 0;
 }
 
 body.night-mode .CodeMirror {
@@ -234,5 +239,20 @@ body.night-mode .CodeMirror {
 }
 
 .download-link:hover {
+    background-color: var(--secondary-hover-color);
+}
+
+.file-bubble {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 10px;
+    background-color: var(--secondary-color);
+    color: #fff;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.file-bubble:hover {
     background-color: var(--secondary-hover-color);
 }

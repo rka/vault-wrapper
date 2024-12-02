@@ -146,24 +146,35 @@ async function unwrapData(token) {
 
         const data = await response.json();
 
-        resultEditor.setValue('');
         // Clear previous content
+        resultEditor.setValue('');
         const resultContainer = resultEditor.getWrapperElement();
-        resultContainer.innerHTML = '';
+        resultContainer.innerHTML = ''; // Clear previous results
         resultContainer.appendChild(resultEditor.getScrollerElement());
 
-        // Check if data contains file and/or text
         if (data.file) {
+            // Create a file bubble
+            const fileBubble = document.createElement('div');
+            fileBubble.className = 'file-bubble';
+            fileBubble.textContent = `📄 ${data.file.name}`;
+            fileBubble.title = 'Click to download';
+
             // Reconstruct file from Base64 data
             const blob = base64ToBlob(data.file.data, data.file.type);
             const url = URL.createObjectURL(blob);
-            // Create download link
-            const downloadLink = document.createElement('a');
-            downloadLink.href = url;
-            downloadLink.download = data.file.name;
-            downloadLink.textContent = `Download ${data.file.name}`;
-            downloadLink.className = 'download-link';
-            resultContainer.appendChild(downloadLink);
+
+            // Attach click event to download the file
+            fileBubble.addEventListener('click', () => {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = data.file.name;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url); // Clean up the URL object
+            });
+
+            resultContainer.appendChild(fileBubble);
         }
 
         if (data.text) {
