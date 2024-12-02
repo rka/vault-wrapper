@@ -14,22 +14,30 @@
     <!-- Favicon -->
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
-<body>
+<body class="light-mode">
     <div class="container">
         <div class="header">
             <h1>Vault Data Wrapper</h1>
+            <div class="info-icon" title="Vault Data Wrapper allows you to securely wrap and share data or files using Hashicorp Vault. You can drag and drop files or enter text/code to wrap. Generated tokens can be shared via URL or directly.">
+                &#9432;
+            </div>
             <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()"></span>
         </div>
         
         <div class="wrap-section">
             <h2>Wrap Data</h2>
-            <!-- CodeMirror Editor for Input -->
-            <div id="wrapInput" class="code-editor"></div>
+            <!-- Wrap Input with Drop Zone -->
+            <div id="dropZone" class="drop-zone">
+                <div id="wrapInput" class="code-editor"></div>
+                <div id="uploadMessage" class="upload-message">Drag & drop a file here, or click to select a file.</div>
+            </div>
             <div class="ttl-input">
                 <label for="ttl">TTL (in seconds):</label>
                 <input type="number" id="ttl" value="60" min="1">
             </div>
             <button onclick="wrapData()">Wrap</button>
+            <!-- Success Message -->
+            <div id="wrapSuccess" class="success-message" style="display: none;">Data wrapped successfully!</div>
             <!-- Display Wrapped Token and URL -->
             <div class="token-display">
                 <label for="wrappedToken">Wrapped Token:</label>
@@ -54,6 +62,8 @@
                 <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
                 <button onclick="unwrapData()">Unwrap</button>
             </div>
+            <!-- Success Message -->
+            <div id="unwrapSuccess" class="success-message" style="display: none;">Data unwrapped successfully!</div>
             <!-- CodeMirror Editor for Output -->
             <div id="unwrapResult" class="code-editor"></div>
         </div>

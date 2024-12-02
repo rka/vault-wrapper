@@ -1,46 +1,54 @@
 package main
 
 import (
-	"encoding/json"
-	"net/http"
+    "encoding/json"
+    "net/http"
 
-	"github.com/sirupsen/logrus"
+    "github.com/sirupsen/logrus"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./static/index.html")
+    http.ServeFile(w, r, "./static/index.html")
 }
 
 func wrapHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Handling wrap request")
-	if r.Method != http.MethodPost {
-		logrus.Warn("Method not allowed for wrap request")
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+    logrus.Debug("Handling wrap request")
+    if r.Method != http.MethodPost {
+        logrus.Warn("Method not allowed for wrap request")
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
 
-	var data struct {
-		Text string `json:"text"`
-		TTL  string `json:"ttl"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		logrus.Error("Error decoding wrap request body: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+    var input struct {
+        Data interface{} `json:"data"`
+        TTL  string      `json:"ttl"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        logrus.Error("Error decoding wrap request body: ", err)
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
 
-	token, details, err := wrapData(data.Text, data.TTL)
-	if err != nil {
-		logrus.Error("Error wrapping data: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    dataBytes, err := json.Marshal(input.Data)
+    if err != nil {
+        logrus.Error("Error marshalling data: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
 
-	logrus.Debug("Data wrapped successfully")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"token":   token,
-		"details": details,
-	})
+    dataString := string(dataBytes)
+    token, details, err := wrapData(dataString, input.TTL)
+    if err != nil {
+        logrus.Error("Error wrapping data: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    logrus.Debug("Data wrapped successfully")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "token":   token,
+        "details": details,
+    })
 }
 
 func unwrapHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,22 +59,29 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    var data struct {
+    var input struct {
         Token string `json:"token"`
     }
-    if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
         logrus.Error("Error decoding unwrap request body: ", err)
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
-    unwrappedData, err := unwrapData(data.Token)
+    dataString, err := unwrapData(input.Token)
     if err != nil {
         logrus.Error("Error unwrapping data: ", err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
+    var data map[string]interface{}
+    if err := json.Unmarshal([]byte(dataString), &data); err != nil {
+        logrus.Error("Error unmarshalling data: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
     logrus.Debug("Data unwrapped successfully")
-    json.NewEncoder(w).Encode(map[string]string{"data": unwrappedData})
+    json.NewEncoder(w).Encode(data)
 }

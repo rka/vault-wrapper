@@ -14,10 +14,83 @@ let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
     lineWrapping: true
 });
 
+// Get the drop zone element
+const dropZone = document.getElementById('dropZone');
+const uploadMessage = document.getElementById('uploadMessage');
+
+// Handle drag over
+dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+// Handle drag leave
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+
+// Handle drop
+dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileUpload(files[0]);
+    }
+});
+
+// Handle click to select file
+dropZone.addEventListener('click', () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.onchange = () => {
+        if (fileInput.files.length > 0) {
+            handleFileUpload(fileInput.files[0]);
+        }
+    };
+    fileInput.click();
+});
+
+// Handle file upload
+function handleFileUpload(file) {
+    const maxSize = 5 * 1024 * 1024; // 5 MB limit
+    if (file.size > maxSize) {
+        alert('File size exceeds 5 MB limit.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
+        const fileData = {
+            isFile: true,
+            name: file.name,
+            type: file.type,
+            data: base64Data
+        };
+        // Display file data in the editor as a JSON string
+        wrapEditor.setValue(JSON.stringify(fileData, null, 2));
+        uploadMessage.textContent = `File "${file.name}" ready to wrap.`;
+    };
+    reader.readAsDataURL(file);
+}
+
 async function wrapData() {
-    const input = wrapEditor.getValue();
+    let inputData = wrapEditor.getValue();
     const ttl = document.getElementById('ttl').value;
     const detailsDiv = document.getElementById('wrapDetails');
+    const wrapSuccess = document.getElementById('wrapSuccess');
+
+    let dataObj;
+    try {
+        dataObj = JSON.parse(inputData);
+    } catch (e) {
+        // Treat input as plain text
+        dataObj = {
+            isFile: false,
+            text: inputData
+        };
+    }
 
     try {
         const response = await fetch('/wrap', {
@@ -25,7 +98,7 @@ async function wrapData() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text: input, ttl: ttl })
+            body: JSON.stringify({ data: dataObj, ttl: ttl })
         });
 
         if (!response.ok) {
@@ -33,17 +106,15 @@ async function wrapData() {
         }
 
         const data = await response.json();
-        const wrappedTokenElement = document.getElementById('wrappedToken');
-        const wrappedLinkElement = document.getElementById('wrappedLink');
-        if (wrappedTokenElement && wrappedLinkElement) {
-            wrappedTokenElement.value = data.token;
-            const url = new URL(window.location.href);
-            url.searchParams.set('token', data.token);
-            wrappedLinkElement.value = url.toString();
-        } else {
-            console.error('Wrapped token or link element not found');
-        }
+        document.getElementById('wrappedToken').value = data.token;
+        const url = new URL(window.location.href);
+        url.searchParams.set('token', data.token);
+        document.getElementById('wrappedLink').value = url.toString();
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
+        wrapSuccess.style.display = 'block';
+        setTimeout(() => {
+            wrapSuccess.style.display = 'none';
+        }, 3000);
     } catch (error) {
         detailsDiv.textContent = `Error: ${error.message}`;
     }
@@ -52,6 +123,7 @@ async function wrapData() {
 async function unwrapData(token) {
     const input = token || document.getElementById('unwrapInput').value;
     const resultEditor = unwrapResultEditor;
+    const unwrapSuccess = document.getElementById('unwrapSuccess');
 
     try {
         const response = await fetch('/unwrap', {
@@ -67,10 +139,42 @@ async function unwrapData(token) {
         }
 
         const data = await response.json();
-        resultEditor.setValue(data.data);
+
+        if (data.isFile) {
+            // Reconstruct file from Base64 data
+            const blob = base64ToBlob(data.data, data.type);
+            const url = URL.createObjectURL(blob);
+            // Create download link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = data.name;
+            downloadLink.textContent = `Download ${data.name}`;
+            downloadLink.className = 'download-link';
+            // Clear editor and display download link
+            resultEditor.setValue('');
+            resultEditor.getWrapperElement().appendChild(downloadLink);
+        } else {
+            // Display text data
+            resultEditor.setValue(data.text);
+        }
+
+        unwrapSuccess.style.display = 'block';
+        setTimeout(() => {
+            unwrapSuccess.style.display = 'none';
+        }, 3000);
     } catch (error) {
         resultEditor.setValue(`Error: ${error.message}`);
     }
+}
+
+// Helper function to convert Base64 to Blob
+function base64ToBlob(base64, type) {
+    const binary = atob(base64);
+    const array = [];
+    for (let i = 0; i < binary.length; i++) {
+        array.push(binary.charCodeAt(i));
+    }
+    return new Blob([new Uint8Array(array)], { type: type });
 }
 
 function copyToClipboard(elementId) {

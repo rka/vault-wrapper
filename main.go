@@ -9,11 +9,6 @@ import (
     "github.com/hashicorp/vault/api"
 )
 
-const (
-    vaultAddr  = "http://vault:8200" // Define the Vault address
-    vaultToken = "root"               // Define the Vault token (consider using a safer method for production)
-)
-
 func init() {
     // Set up logrus
     logrus.SetLevel(logrus.DebugLevel)

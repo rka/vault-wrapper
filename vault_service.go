@@ -1,125 +1,74 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
+    "context"
+    "time"
 
-	"github.com/sirupsen/logrus"
+    "github.com/hashicorp/vault/api"
+    "github.com/sirupsen/logrus"
 )
 
-// const (
-// 	vaultAddr  = "http://vault:8200"
-// 	vaultToken = "root"
-// )
+const (
+    vaultAddr  = "http://vault:8200" // Update as per your Vault address
+    vaultToken = "root"              // Use a secure token in production
+)
 
-func wrapData(data string, ttl string) (string, map[string]interface{}, error) {
-	logrus.Debug("Wrapping data")
+func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
+    client, err := api.NewClient(&api.Config{Address: vaultAddr})
+    if err != nil {
+        logrus.Error("Error creating Vault client: ", err)
+        return "", nil, err
+    }
 
-	payload := map[string]interface{}{"data": data}
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		logrus.Error("Error marshalling JSON payload: ", err)
-		return "", nil, err
-	}
+    client.SetToken(vaultToken)
 
-	req, err := http.NewRequest("POST", vaultAddr+"/v1/sys/wrapping/wrap", bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		logrus.Error("Error creating wrap request: ", err)
-		return "", nil, err
-	}
-	req.Header.Set("X-Vault-Token", vaultToken)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Vault-Wrap-TTL", ttl)
+    // Create a context with timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logrus.Error("Error sending wrap request: ", err)
-		return "", nil, err
-	}
-	defer resp.Body.Close()
+    // Convert TTL to time.Duration
+    ttlDuration, err := time.ParseDuration(ttl + "s")
+    if err != nil {
+        logrus.Error("Invalid TTL: ", err)
+        return "", nil, err
+    }
 
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
-	logrus.Infof("Vault response for wrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
+    secret, err := client.Logical().WriteWithContext(ctx, "sys/wrapping/wrap", map[string]interface{}{
+        "ttl":  ttlDuration.String(),
+        "body": data,
+    })
+    if err != nil {
+        logrus.Error("Error wrapping data: ", err)
+        return "", nil, err
+    }
 
-	if resp.StatusCode != http.StatusOK {
-		logrus.Warnf("Vault returned non-200 status: %d", resp.StatusCode)
-		return "", nil, fmt.Errorf("vault returned non-200 status: %d", resp.StatusCode)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		logrus.Error("Error decoding response from Vault: ", err)
-		return "", nil, err
-	}
-
-	wrapInfo, ok := result["wrap_info"].(map[string]interface{})
-	if !ok {
-		logrus.Error("Unexpected response format from Vault")
-		return "", nil, fmt.Errorf("unexpected response format")
-	}
-
-	token, ok := wrapInfo["token"].(string)
-	if !ok {
-		logrus.Error("Token not found in Vault response")
-		return "", nil, fmt.Errorf("token not found in response")
-	}
-
-	logrus.Debug("Data wrapped successfully")
-	return token, wrapInfo, nil
+    return secret.WrapInfo.Token, secret.WrapInfo, nil
 }
 
 func unwrapData(token string) (string, error) {
-    logrus.Debug("Unwrapping data")
-
-    req, err := http.NewRequest("POST", vaultAddr+"/v1/sys/wrapping/unwrap", nil)
+    client, err := api.NewClient(&api.Config{Address: vaultAddr})
     if err != nil {
-        logrus.Error("Error creating unwrap request: ", err)
+        logrus.Error("Error creating Vault client: ", err)
         return "", err
     }
-    
-    req.Header.Set("X-Vault-Token", token)
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
+    // Create a context with timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    client.SetToken(token)
+
+    secret, err := client.Logical().UnwrapWithContext(ctx, "")
     if err != nil {
-        logrus.Error("Error sending unwrap request: ", err)
-        return "", err
-    }
-    
-    defer resp.Body.Close()
-
-    bodyBytes, _ := ioutil.ReadAll(resp.Body)
-    logrus.Infof("Vault response for unwrap request: Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
-
-    if resp.StatusCode != http.StatusOK {
-        logrus.Warnf("Vault returned non-200 status: %d", resp.StatusCode)
-        return "", fmt.Errorf("vault returned non-200 status: %d", resp.StatusCode)
-    }
-
-    var result map[string]interface{}
-    
-    if err := json.Unmarshal(bodyBytes, &result); err != nil {
-        logrus.Error("Error decoding response from Vault: ", err)
+        logrus.Error("Error unwrapping data: ", err)
         return "", err
     }
 
-    data, ok := result["data"].(map[string]interface{})
-    
+    data, ok := secret.Data["body"].(string)
     if !ok {
-        logrus.Error("Unexpected response format from Vault")
-        return "", fmt.Errorf("unexpected response format")
+        logrus.Error("Error retrieving unwrapped data")
+        return "", err
     }
 
-    unwrappedData, ok := data["data"].(string)
-    if !ok {
-        logrus.Error("Data not found in Vault response")
-        return "", fmt.Errorf("data not found in response")
-    }
-
-    logrus.Debug("Data unwrapped successfully")
-    return unwrappedData, nil
+    return data, nil
 }
