@@ -254,6 +254,7 @@ body.night-mode .CodeMirror {
     display: inline-block;
     padding: 10px 15px;
     margin-top: 10px;
+    margin-right: 5px;
     background-color: var(--secondary-color);
     color: #fff;
     border-radius: var(--border-radius);
@@ -265,13 +266,22 @@ body.night-mode .CodeMirror {
     background-color: var(--secondary-hover-color);
 }
 
-.copy-icon:active {
-    transform: scale(0.95);
-}
-
 /* Wrap File Bubble Container */
 #wrapFileBubbleContainer {
     margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* File Bubble Container in Unwrap Section */
+#fileBubbleContainer {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.copy-icon:active {
+    transform: scale(0.95);
 }
 
 /* Additional styles for clickable icons */
@@ -282,8 +292,4 @@ body.night-mode .CodeMirror {
 
 .clickable-icon:hover {
     color: var(--primary-hover-color);
-}
-
-.clickable-icon:active {
-    transform: scale(0.95);
 }
