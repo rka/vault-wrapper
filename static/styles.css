@@ -125,10 +125,15 @@ button:hover {
     cursor: pointer;
     font-size: 1.2em;
     color: var(--text-color);
+    transition: color var(--transition-speed), transform 0.1s;
 }
 
 .token-input .copy-icon:hover, .link-input .copy-icon:hover {
-    color: var(--primary-color);
+    color: var(--primary-hover-color);
+}
+
+.token-input .copy-icon:active, .link-input .copy-icon:active {
+    transform: scale(0.95);
 }
 
 .details-box {
@@ -149,6 +154,15 @@ button:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: color var(--transition-speed), transform 0.1s;
+}
+
+.theme-icon:hover {
+    color: var(--primary-hover-color);
+}
+
+.theme-icon:active {
+    transform: scale(0.95);
 }
 
 body.light-mode .theme-icon::after {
@@ -198,13 +212,17 @@ body.night-mode .CodeMirror {
     bottom: 10px;
     right: 10px;
     font-size: 1.5em;
-    cursor: pointer;
     opacity: 0.7;
-    transition: opacity var(--transition-speed);
+    transition: opacity var(--transition-speed), transform 0.1s;
+    cursor: pointer;
 }
 
 .file-upload-icon:hover {
     opacity: 1;
+}
+
+.file-upload-icon:active {
+    transform: scale(0.95);
 }
 
 /* Success Message Styles */
@@ -217,13 +235,18 @@ body.night-mode .CodeMirror {
 /* Info Icon Styles */
 .info-icon {
     font-size: 1em;
-    cursor: help;
     margin-left: 5px;
     color: var(--primary-color);
+    cursor: help;
+    transition: color var(--transition-speed), transform 0.1s;
 }
 
 .info-icon:hover {
     color: var(--primary-hover-color);
+}
+
+.info-icon:active {
+    transform: scale(0.95);
 }
 
 /* File Bubble Styles */
@@ -242,7 +265,25 @@ body.night-mode .CodeMirror {
     background-color: var(--secondary-hover-color);
 }
 
+.copy-icon:active {
+    transform: scale(0.95);
+}
+
 /* Wrap File Bubble Container */
 #wrapFileBubbleContainer {
     margin-top: 10px;
+}
+
+/* Additional styles for clickable icons */
+.clickable-icon {
+    cursor: pointer;
+    transition: color var(--transition-speed), transform 0.1s;
+}
+
+.clickable-icon:hover {
+    color: var(--primary-hover-color);
+}
+
+.clickable-icon:active {
+    transform: scale(0.95);
 }
