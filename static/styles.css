@@ -161,17 +161,12 @@ body.night-mode .theme-icon::after {
 
 .unwrap-input-group {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     margin-top: 10px;
 }
 
 .unwrap-input-group input[type="text"] {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.unwrap-input-group button {
-    flex-shrink: 0;
+    margin-bottom: 10px;
 }
 
 body.night-mode .CodeMirror {
@@ -231,6 +226,7 @@ body.night-mode .CodeMirror {
     display: inline-block;
     padding: 10px 15px;
     margin-top: 10px;
+    margin-right: 5px;
     background-color: var(--secondary-color);
     color: #fff;
     border-radius: var(--border-radius);

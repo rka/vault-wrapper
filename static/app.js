@@ -20,8 +20,8 @@ const fileUploadIcon = document.getElementById('fileUploadIcon');
 const wrapSuccess = document.getElementById('wrapSuccess');
 const unwrapSuccess = document.getElementById('unwrapSuccess');
 
-// Variable to hold uploaded file data
-let uploadedFile = null;
+// Variable to hold uploaded files data
+let uploadedFiles = [];
 
 // Maximum allowed size (5 MB)
 const maxSize = 5 * 1024 * 1024; // 5 MB limit
@@ -43,7 +43,7 @@ dropZone.addEventListener('drop', (event) => {
     dropZone.classList.remove('dragover');
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        handleFileUpload(files[0]);
+        handleFileUpload(files);
     }
 });
 
@@ -51,58 +51,64 @@ dropZone.addEventListener('drop', (event) => {
 fileUploadIcon.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
+    fileInput.multiple = true;
     fileInput.onchange = () => {
         if (fileInput.files.length > 0) {
-            handleFileUpload(fileInput.files[0]);
+            handleFileUpload(fileInput.files);
         }
     };
     fileInput.click();
 });
 
-// Handle file upload
-function handleFileUpload(file) {
-    if (file.size > maxSize) {
-        alert('File size exceeds 5 MB limit.');
-        return;
-    }
+// Handle file uploads (multiple files)
+function handleFileUpload(files) {
+    for (const file of files) {
+        if (file.size > maxSize) {
+            alert(`File "${file.name}" exceeds 5 MB limit and will not be added.`);
+            continue;
+        }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
-        uploadedFile = {
-            isFile: true,
-            name: file.name,
-            type: file.type,
-            data: base64Data,
-            size: file.size // Include file size
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
+            const uploadedFile = {
+                isFile: true,
+                name: file.name,
+                type: file.type,
+                data: base64Data,
+                size: file.size // Include file size
+            };
+            uploadedFiles.push(uploadedFile);
+            // Display the file bubbles in the wrap section
+            displayWrapFileBubbles();
+            // Update size bar
+            updateSizeBar();
         };
-        // Display the file bubble in the wrap section
-        displayWrapFileBubble(uploadedFile);
-        // Update size bar
-        updateSizeBar();
-    };
-    reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+    }
 }
 
-// Display the file bubble in the wrap section
-function displayWrapFileBubble(file) {
+// Display the file bubbles in the wrap section
+function displayWrapFileBubbles() {
     const wrapFileBubbleContainer = document.getElementById('wrapFileBubbleContainer');
     wrapFileBubbleContainer.innerHTML = ''; // Clear previous content
 
-    const fileBubble = document.createElement('div');
-    fileBubble.className = 'file-bubble';
-    const fileSizeFormatted = formatFileSize(file.size);
-    fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
-    fileBubble.title = 'Click to remove';
+    uploadedFiles.forEach((file, index) => {
+        const fileBubble = document.createElement('div');
+        fileBubble.className = 'file-bubble';
+        const fileSizeFormatted = formatFileSize(file.size);
+        fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
+        fileBubble.title = 'Click to remove';
 
-    // Attach click event to remove the file
-    fileBubble.addEventListener('click', () => {
-        uploadedFile = null;
-        wrapFileBubbleContainer.innerHTML = '';
-        updateSizeBar();
+        // Attach click event to remove the file
+        fileBubble.addEventListener('click', () => {
+            uploadedFiles.splice(index, 1);
+            displayWrapFileBubbles();
+            updateSizeBar();
+        });
+
+        wrapFileBubbleContainer.appendChild(fileBubble);
     });
-
-    wrapFileBubbleContainer.appendChild(fileBubble);
 }
 
 // Format file size into human-readable format
@@ -123,10 +129,12 @@ function getTextSizeInBytes(text) {
 function updateSizeBar() {
     const inputText = wrapEditor.getValue();
     const textSize = getTextSizeInBytes(inputText);
-    const fileSize = uploadedFile ? uploadedFile.size : 0;
-    const totalSize = textSize + fileSize;
+    const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
+    const totalSize = textSize + filesSize;
 
+    // Get the size bar inner div
     const sizeBarInner = document.getElementById('sizeBarInner');
+
     const percentage = (totalSize / maxSize) * 100;
     const cappedPercentage = Math.min(percentage, 100);
 
@@ -150,8 +158,8 @@ wrapEditor.on('change', updateSizeBar);
 async function wrapData() {
     const inputText = wrapEditor.getValue();
     const textSize = getTextSizeInBytes(inputText);
-    const fileSize = uploadedFile ? uploadedFile.size : 0;
-    const totalSize = textSize + fileSize;
+    const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
+    const totalSize = textSize + filesSize;
 
     if (totalSize > maxSize) {
         alert('Total size exceeds the maximum allowed size of 5 MB.');
@@ -168,12 +176,12 @@ async function wrapData() {
         dataObj.text = inputText;
     }
 
-    if (uploadedFile) {
-        dataObj.file = uploadedFile;
+    if (uploadedFiles.length > 0) {
+        dataObj.files = uploadedFiles;
     }
 
     if (Object.keys(dataObj).length === 0) {
-        alert('Please enter text or upload a file to wrap.');
+        alert('Please enter text or upload files to wrap.');
         return;
     }
 
@@ -201,8 +209,8 @@ async function wrapData() {
         setTimeout(() => {
             wrapSuccess.style.display = 'none';
         }, 3000);
-        // Reset uploaded file and clear file bubble after wrapping
-        uploadedFile = null;
+        // Reset uploaded files and clear file bubbles after wrapping
+        uploadedFiles = [];
         document.getElementById('wrapFileBubbleContainer').innerHTML = '';
         // Update size bar
         updateSizeBar();
@@ -240,32 +248,34 @@ async function unwrapData(token) {
 
         let contentAdded = false;
 
-        if (data.file) {
-            console.log('File data found:', data.file);
-            // Reconstruct file from Base64 data
-            const blob = base64ToBlob(data.file.data, data.file.type);
-            const url = URL.createObjectURL(blob);
+        if (data.files && Array.isArray(data.files)) {
+            console.log('Files data found:', data.files);
+            data.files.forEach(file => {
+                // Reconstruct file from Base64 data
+                const blob = base64ToBlob(file.data, file.type);
+                const url = URL.createObjectURL(blob);
 
-            // Create file bubble
-            const fileBubble = document.createElement('div');
-            fileBubble.className = 'file-bubble';
-            const fileSizeFormatted = formatFileSize(data.file.size);
-            fileBubble.textContent = `📄 ${data.file.name} (${fileSizeFormatted})`;
-            fileBubble.title = 'Click to download';
+                // Create file bubble
+                const fileBubble = document.createElement('div');
+                fileBubble.className = 'file-bubble';
+                const fileSizeFormatted = formatFileSize(file.size);
+                fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
+                fileBubble.title = 'Click to download';
 
-            // Attach click event
-            fileBubble.addEventListener('click', () => {
-                const downloadLink = document.createElement('a');
-                downloadLink.href = url;
-                downloadLink.download = data.file.name;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(url);
+                // Attach click event
+                fileBubble.addEventListener('click', () => {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = file.name;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(url);
+                });
+
+                fileBubbleContainer.appendChild(fileBubble);
+                contentAdded = true;
             });
-
-            fileBubbleContainer.appendChild(fileBubble);
-            contentAdded = true;
         }
 
         if (data.text) {
