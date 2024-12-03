@@ -5,7 +5,7 @@ Vault Data Wrapper is a web application that utilizes Hashicorp Vault's wrap fea
 ## Features
 
 - **Secure Data Wrapping and Unwrapping**
-  - Wrap any text or code snippet with a specified TTL.
+  - Wrap any text/code snippet or files with a specified TTL.
   - Generate a unique wrapped token for secure sharing.
 - **Shareable Links**
   - Create shareable URLs containing the wrapped token.
@@ -20,7 +20,8 @@ Vault Data Wrapper is a web application that utilizes Hashicorp Vault's wrap fea
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/2a727684-0698-4438-b587-09f533627fb1)
+![image](https://github.com/user-attachments/assets/659d14de-87a7-40c1-be52-6f0644211026)
+
 
 ## Getting Started
 
