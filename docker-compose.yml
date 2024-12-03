@@ -40,7 +40,8 @@ services:
     #   - 8200:8200  # Expose Vault on the host for testing
 
   wrap:
-    build: .
+    build:
+      context: .
     container_name: wrap
     hostname: wrap
     # ports:
