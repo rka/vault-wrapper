@@ -20,8 +20,11 @@ const fileUploadIcon = document.getElementById('fileUploadIcon');
 const wrapSuccess = document.getElementById('wrapSuccess');
 const unwrapSuccess = document.getElementById('unwrapSuccess');
 
-// Variable to hold uploaded files data
-let uploadedFiles = [];
+// Variable to hold uploaded file data
+let uploadedFile = null;
+
+// Maximum allowed size (5 MB)
+const maxSize = 5 * 1024 * 1024; // 5 MB limit
 
 // Handle drag over
 dropZone.addEventListener('dragover', (event) => {
@@ -40,7 +43,7 @@ dropZone.addEventListener('drop', (event) => {
     dropZone.classList.remove('dragover');
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        handleFileUpload(files);
+        handleFileUpload(files[0]);
     }
 });
 
@@ -48,67 +51,113 @@ dropZone.addEventListener('drop', (event) => {
 fileUploadIcon.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.multiple = true; // Allow multiple files
     fileInput.onchange = () => {
         if (fileInput.files.length > 0) {
-            handleFileUpload(fileInput.files);
+            handleFileUpload(fileInput.files[0]);
         }
     };
     fileInput.click();
 });
 
 // Handle file upload
-function handleFileUpload(files) {
-    const maxSize = 5 * 1024 * 1024; // 5 MB limit per file
-    const wrapFileBubbleContainer = document.getElementById('wrapFileBubbleContainer');
-
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
-        if (file.size > maxSize) {
-            alert(`File "${file.name}" exceeds 5 MB limit.`);
-            continue;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
-            const fileData = {
-                isFile: true,
-                name: file.name,
-                type: file.type,
-                data: base64Data
-            };
-            uploadedFiles.push(fileData);
-            // Display the file bubble in the wrap section
-            displayWrapFileBubble(fileData);
-        };
-        reader.readAsDataURL(file);
+function handleFileUpload(file) {
+    if (file.size > maxSize) {
+        alert('File size exceeds 5 MB limit.');
+        return;
     }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
+        uploadedFile = {
+            isFile: true,
+            name: file.name,
+            type: file.type,
+            data: base64Data,
+            size: file.size // Include file size
+        };
+        // Display the file bubble in the wrap section
+        displayWrapFileBubble(uploadedFile);
+        // Update size bar
+        updateSizeBar();
+    };
+    reader.readAsDataURL(file);
 }
 
-// Display the file bubbles in the wrap section
+// Display the file bubble in the wrap section
 function displayWrapFileBubble(file) {
     const wrapFileBubbleContainer = document.getElementById('wrapFileBubbleContainer');
+    wrapFileBubbleContainer.innerHTML = ''; // Clear previous content
 
     const fileBubble = document.createElement('div');
     fileBubble.className = 'file-bubble';
-    fileBubble.textContent = `📄 ${file.name}`;
+    const fileSizeFormatted = formatFileSize(file.size);
+    fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
     fileBubble.title = 'Click to remove';
 
     // Attach click event to remove the file
     fileBubble.addEventListener('click', () => {
-        // Remove the file from uploadedFiles array
-        uploadedFiles = uploadedFiles.filter(f => f.name !== file.name);
-        // Remove the file bubble from the container
-        wrapFileBubbleContainer.removeChild(fileBubble);
+        uploadedFile = null;
+        wrapFileBubbleContainer.innerHTML = '';
+        updateSizeBar();
     });
 
     wrapFileBubbleContainer.appendChild(fileBubble);
 }
 
+// Format file size into human-readable format
+function formatFileSize(bytes) {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes === 0) return '0 Bytes';
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+    const size = bytes / Math.pow(1024, i);
+    return `${size.toFixed(2)} ${sizes[i]}`;
+}
+
+// Get text size in bytes
+function getTextSizeInBytes(text) {
+    return new TextEncoder().encode(text).length;
+}
+
+// Update size bar
+function updateSizeBar() {
+    const inputText = wrapEditor.getValue();
+    const textSize = getTextSizeInBytes(inputText);
+    const fileSize = uploadedFile ? uploadedFile.size : 0;
+    const totalSize = textSize + fileSize;
+
+    const sizeBarInner = document.getElementById('sizeBarInner');
+    const percentage = (totalSize / maxSize) * 100;
+    const cappedPercentage = Math.min(percentage, 100);
+
+    sizeBarInner.style.width = `${cappedPercentage}%`;
+
+    // Change color if over limit
+    if (totalSize > maxSize) {
+        sizeBarInner.style.backgroundColor = 'red';
+    } else {
+        sizeBarInner.style.backgroundColor = 'var(--primary-color)';
+    }
+
+    // Display the size as text in the title
+    const sizeBar = document.getElementById('sizeBar');
+    sizeBar.title = `Total size: ${formatFileSize(totalSize)} / ${formatFileSize(maxSize)}. Maximum allowed is 5 MB.`;
+}
+
+// Update size bar when text changes
+wrapEditor.on('change', updateSizeBar);
+
 async function wrapData() {
     const inputText = wrapEditor.getValue();
+    const textSize = getTextSizeInBytes(inputText);
+    const fileSize = uploadedFile ? uploadedFile.size : 0;
+    const totalSize = textSize + fileSize;
+
+    if (totalSize > maxSize) {
+        alert('Total size exceeds the maximum allowed size of 5 MB.');
+        return;
+    }
+
     const ttl = document.getElementById('ttl').value;
     const detailsDiv = document.getElementById('wrapDetails');
 
@@ -119,8 +168,8 @@ async function wrapData() {
         dataObj.text = inputText;
     }
 
-    if (uploadedFiles.length > 0) {
-        dataObj.files = uploadedFiles;
+    if (uploadedFile) {
+        dataObj.file = uploadedFile;
     }
 
     if (Object.keys(dataObj).length === 0) {
@@ -152,9 +201,11 @@ async function wrapData() {
         setTimeout(() => {
             wrapSuccess.style.display = 'none';
         }, 3000);
-        // Reset uploaded files and clear file bubbles after wrapping
-        uploadedFiles = [];
+        // Reset uploaded file and clear file bubble after wrapping
+        uploadedFile = null;
         document.getElementById('wrapFileBubbleContainer').innerHTML = '';
+        // Update size bar
+        updateSizeBar();
     } catch (error) {
         detailsDiv.textContent = `Error: ${error.message}`;
     }
@@ -189,32 +240,31 @@ async function unwrapData(token) {
 
         let contentAdded = false;
 
-        if (data.files && data.files.length > 0) {
-            data.files.forEach(fileData => {
-                console.log('File data found:', fileData);
-                // Reconstruct file from Base64 data
-                const blob = base64ToBlob(fileData.data, fileData.type);
-                const url = URL.createObjectURL(blob);
+        if (data.file) {
+            console.log('File data found:', data.file);
+            // Reconstruct file from Base64 data
+            const blob = base64ToBlob(data.file.data, data.file.type);
+            const url = URL.createObjectURL(blob);
 
-                // Create file bubble
-                const fileBubble = document.createElement('div');
-                fileBubble.className = 'file-bubble';
-                fileBubble.textContent = `📄 ${fileData.name}`;
-                fileBubble.title = 'Click to download';
+            // Create file bubble
+            const fileBubble = document.createElement('div');
+            fileBubble.className = 'file-bubble';
+            const fileSizeFormatted = formatFileSize(data.file.size);
+            fileBubble.textContent = `📄 ${data.file.name} (${fileSizeFormatted})`;
+            fileBubble.title = 'Click to download';
 
-                // Attach click event
-                fileBubble.addEventListener('click', () => {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = url;
-                    downloadLink.download = fileData.name;
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                    URL.revokeObjectURL(url);
-                });
-
-                fileBubbleContainer.appendChild(fileBubble);
+            // Attach click event
+            fileBubble.addEventListener('click', () => {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = data.file.name;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
             });
+
+            fileBubbleContainer.appendChild(fileBubble);
             contentAdded = true;
         }
 
@@ -303,4 +353,7 @@ window.onload = function() {
         document.getElementById('unwrapInput').value = token;
         unwrapData(token);
     }
+
+    // Initialize size bar
+    updateSizeBar();
 };
