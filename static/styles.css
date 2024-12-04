@@ -217,10 +217,6 @@ body.night-mode .CodeMirror {
     color: var(--primary-color);
 }
 
-.info-icon:hover {
-    color: var(--primary-hover-color);
-}
-
 /* File Bubble Styles */
 .file-bubble {
     display: inline-block;
@@ -258,4 +254,31 @@ body.night-mode .CodeMirror {
     background-color: var(--primary-color);
     width: 0%;
     transition: width 0.3s, background-color 0.3s;
+}
+
+/* Highlight on Hover for Clickable/Info Elements */
+.info-icon:hover, .copy-icon:hover, .theme-icon:hover, #sizeBar:hover {
+    box-shadow: 0 0 5px var(--primary-color);
+}
+
+/* Copied Banner */
+#copiedBanner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--secondary-color);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: none;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#copiedBanner.show {
+    display: block;
+    opacity: 1;
 }

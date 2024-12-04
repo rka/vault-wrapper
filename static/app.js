@@ -319,9 +319,19 @@ function base64ToBlob(base64, type) {
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
     const text = element.value;
-    navigator.clipboard.writeText(text).catch(err => {
+    navigator.clipboard.writeText(text).then(() => {
+        showCopiedBanner();
+    }).catch(err => {
         console.error('Failed to copy text: ', err);
     });
+}
+
+function showCopiedBanner() {
+    const banner = document.getElementById('copiedBanner');
+    banner.classList.add('show');
+    setTimeout(() => {
+        banner.classList.remove('show');
+    }, 1500);
 }
 
 function toggleNightMode() {
