@@ -257,7 +257,14 @@ body.night-mode .CodeMirror {
 }
 
 /* Highlight on Hover for Clickable/Info Elements */
-.info-icon:hover, .copy-icon:hover, .theme-icon:hover, #sizeBar:hover {
+
+/* For icons (emoji), use text-shadow to create a glow effect that follows the emoji shape */
+.info-icon:hover, .copy-icon:hover, .theme-icon:hover {
+    text-shadow: 0 0 5px var(--primary-color);
+}
+
+/* The sizeBar is rectangular, so a box-shadow highlight works well */
+#sizeBar:hover {
     box-shadow: 0 0 5px var(--primary-color);
 }
 
