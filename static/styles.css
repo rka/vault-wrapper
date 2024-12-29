@@ -56,11 +56,12 @@ h1, h2 {
 }
 
 .CodeMirror {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    border: none !important;     /* Remove any border CodeMirror might apply */
+    border-radius: 0 !important; /* Remove radius so it doesn't double up */
+    width: 100%;
     height: auto;
-    min-height: 100px;
-}
+    min-height: 180px;           /* Slightly less than .drop-zone to keep margin */
+    box-sizing: border-box;
 
 .ttl-input {
     display: flex;
@@ -177,10 +178,16 @@ body.night-mode .CodeMirror {
 /* Drop Zone Styles */
 .drop-zone {
     border: 1px solid var(--border-color);
-    padding: 0;
     border-radius: var(--border-radius);
     position: relative;
     transition: background-color 0.3s;
+    padding: 10px;            /* Add padding to separate editor from edges */
+    margin-bottom: 20px;      /* Optional additional spacing */
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 200px;        /* Provide a minimum height so it looks consistent */
+    display: flex;
+    flex-direction: column;
 }
 
 .drop-zone.dragover {
