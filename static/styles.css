@@ -176,7 +176,7 @@ body.night-mode .CodeMirror {
 
 /* Drop Zone Styles */
 .drop-zone {
-    border: 1px solid var(--border-color);
+    border: 0px solid var(--border-color);
     padding: 0;
     border-radius: var(--border-radius);
     position: relative;
