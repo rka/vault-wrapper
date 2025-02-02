@@ -1,291 +1,146 @@
-/* Variables for consistent theming */
+/* Modernized Color Scheme */
 :root {
-    --primary-color: #3498db;
-    --primary-hover-color: #2980b9;
-    --secondary-color: #2ecc71;
-    --secondary-hover-color: #27ae60;
-    --background-color: #f4f4f4;
-    --container-background: #fff;
-    --text-color: #333;
-    --border-color: #ddd;
-    --border-radius: 4px;
-    --transition-speed: 0.3s;
+    --primary-color: #3b82f6; /* Modern blue from Tailwind CSS */
+    --primary-hover: #1d4ed8;
+    --secondary-color: #2563eb; /* Updated secondary color with better contrast */
+    --background-light: #f8fafc;
+    --background-medium: #e2e8f0;
+    --text-primary: #111827;
+    --text-secondary: #475569;
+    --text-muted: #a1aaa6;
+    --accent-color: #8b5cf6; /* Modern purple accent */
+    --success-color: #22c55e;
+    --error-color: #ef4444;
 }
 
+/* Updated Base Styles */
 body {
-    font-family: 'Open Sans', Arial, sans-serif;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    transition: all 0.2s ease;
 }
 
-body.night-mode {
-    --background-color: #2c3e50;
-    --container-background: #34495e;
-    --text-color: #ecf0f1;
-    --border-color: #7f8c8d;
-}
-
-.container {
-    background-color: var(--container-background);
-    padding: 20px;
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: background-color var(--transition-speed), color var(--transition-speed);
-}
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-h1, h2 {
-    font-weight: 600;
-}
-
-.wrap-section, .unwrap-section {
-    margin-bottom: 40px;
-}
-
-.code-editor, .token-display, .link-display {
-    margin-top: 10px;
-}
-
-.CodeMirror {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    height: auto;
-    min-height: 100px;
-}
-
-.ttl-input {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-}
-
-.ttl-input label {
-    margin-right: 10px;
-}
-
-textarea, input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background-color: var(--container-background);
-    color: var(--text-color);
-    transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
-    box-sizing: border-box;
-}
-
-button {
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: var(--border-radius);
-    transition: background-color var(--transition-speed);
-    margin-top: 10px;
-}
-
-button:hover {
-    background-color: var(--primary-hover-color);
-}
-
-.token-display, .link-display {
-    margin-top: 20px;
-}
-
-.token-display label, .link-display label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.token-input, .link-input {
-    position: relative;
-}
-
-.token-input input, .link-input input {
-    width: 100%;
-    padding-right: 30px; /* Space for the copy icon */
-    cursor: pointer;
-}
-
-.token-input .copy-icon, .link-input .copy-icon {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 1.2em;
-    color: var(--text-color);
-}
-
-.token-input .copy-icon:hover, .link-input .copy-icon:hover {
-    color: var(--primary-color);
-}
-
-.details-box {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: var(--container-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 0.9em;
-    transition: background-color var(--transition-speed), border-color var(--transition-speed);
-}
-
-.theme-icon {
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    font-size: 1.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-body.light-mode .theme-icon::after {
-    content: '🌙'; /* Moon icon */
-}
-
-body.night-mode .theme-icon::after {
-    content: '☀️'; /* Sun icon */
-}
-
-.unwrap-input-group {
-    display: flex;
-    flex-direction: column;
-    margin-top: 10px;
-}
-
-.unwrap-input-group input[type="text"] {
-    margin-bottom: 10px;
-}
-
-body.night-mode .CodeMirror {
-    background-color: #2c3e50;
-    color: #ecf0f1;
-}
-
-/* Drop Zone Styles */
 .drop-zone {
-    border: 0px solid var(--border-color);
-    padding: 0;
-    border-radius: var(--border-radius);
-    position: relative;
-    transition: background-color 0.3s;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    background-color: var(--background-medium);
+    padding: 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .drop-zone.dragover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(59, 130, 246, 0.1);
 }
 
-/* File Upload Icon */
 .file-upload-icon {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    font-size: 1.5em;
-    cursor: pointer;
+    color: var(--primary-color);
     opacity: 0.7;
-    transition: opacity var(--transition-speed);
+    transition: all 0.2s ease;
 }
 
 .file-upload-icon:hover {
     opacity: 1;
+    transform: scale(1.1);
 }
 
-/* Success Message Styles */
 .success-message {
-    color: var(--secondary-color);
-    font-weight: bold;
-    margin-top: 10px;
+    color: var(--success-color);
+    font-weight: 600;
+    margin-top: 0.5rem;
 }
 
-/* Info Icon Styles */
 .info-icon {
-    font-size: 1em;
+    color: var(--accent-color);
     cursor: help;
-    margin-left: 5px;
-    color: var(--primary-color);
+    transition: all 0.2s ease;
 }
 
-/* File Bubble Styles */
 .file-bubble {
-    display: inline-block;
-    padding: 10px 15px;
-    margin-top: 10px;
-    margin-right: 5px;
     background-color: var(--secondary-color);
-    color: #fff;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: background-color var(--transition-speed);
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    margin-right: 0.5rem;
+    transition: all 0.2s ease;
 }
 
-.file-bubble:hover {
-    background-color: var(--secondary-hover-color);
-}
-
-/* Wrap File Bubble Container */
-#wrapFileBubbleContainer {
-    margin-top: 10px;
-}
-
-/* Size Bar Styles */
 .size-bar {
-    position: relative;
-    height: 10px;
-    background-color: #ddd;
-    border-radius: var(--border-radius);
-    margin-top: 10px;
-    overflow: hidden;
+    height: 6px;
+    background-color: rgba(139, 143, 147, 0.2);
+    border-radius: 12px;
+    margin-top: 0.75rem;
 }
 
 .size-bar-inner {
-    height: 100%;
     background-color: var(--primary-color);
-    width: 0%;
-    transition: width 0.3s, background-color 0.3s;
+    transition: all 0.2s ease;
 }
 
-/* Highlight on Hover for Clickable/Info Elements */
-
-/* For icons (emoji), use text-shadow to create a glow effect that follows the emoji shape */
-.info-icon:hover, .copy-icon:hover, .theme-icon:hover {
-    text-shadow: 0 0 5px var(--primary-color);
+/* Modern Button Styles */
+.button {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-/* The sizeBar is rectangular, so a box-shadow highlight works well */
-#sizeBar:hover {
-    box-shadow: 0 0 5px var(--primary-color);
+.button-primary {
+    background-color: var(--primary-color);
+    color: white;
 }
 
-/* Copied Banner */
-#copiedBanner {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--secondary-color);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: var(--border-radius);
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    display: none;
-    font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.3s;
+.button-primary:hover {
+    background-color: var(--primary-hover);
 }
 
-#copiedBanner.show {
-    display: block;
-    opacity: 1;
+/* Modern Card Styles */
+.card {
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Form Styles */
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Modern Hover Effects */
+.hover-scale {
+    transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+.hover-translate-y {
+    transition: transform 0.2s ease;
+}
+
+.hover-translate-y:hover {
+    transform: translateY(-2px);
+}
+
+/* Modern Shadow Colors */
+.shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-md {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
