@@ -1,146 +1,306 @@
-/* Modernized Color Scheme */
+/* Modern, Professional Theme Variables */
 :root {
-    --primary-color: #3b82f6; /* Modern blue from Tailwind CSS */
-    --primary-hover: #1d4ed8;
-    --secondary-color: #2563eb; /* Updated secondary color with better contrast */
-    --background-light: #f8fafc;
-    --background-medium: #e2e8f0;
-    --text-primary: #111827;
-    --text-secondary: #475569;
-    --text-muted: #a1aaa6;
-    --accent-color: #8b5cf6; /* Modern purple accent */
-    --success-color: #22c55e;
-    --error-color: #ef4444;
+    --primary-color: #007BFF;           /* Professional blue */
+    --primary-hover-color: #0056b3;       /* Darker blue for hover */
+    --secondary-color: #6c757d;           /* Neutral gray */
+    --secondary-hover-color: #5a6268;     /* Slightly darker gray */
+    --background-color: #f8f9fa;          /* Light, clean background */
+    --container-background: #ffffff;      /* Crisp white container */
+    --text-color: #212529;                /* Dark gray for improved readability */
+    --border-color: #dee2e6;              /* Subtle border gray */
+    --border-radius: 6px;                 /* Slightly increased rounding */
+    --transition-speed: 0.3s;             /* Smooth transitions */
 }
 
-/* Updated Base Styles */
+/* Body & Overall Layout */
 body {
-    background-color: var(--background-light);
-    color: var(--text-primary);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    transition: all 0.2s ease;
+    font-family: 'Open Sans', Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
+/* Dark Mode Overrides */
+body.night-mode {
+    --background-color: #343a40;         /* Darker background for night mode */
+    --container-background: #495057;       /* Darker container background */
+    --text-color: #f8f9fa;                 /* Light text for contrast */
+    --border-color: #6c757d;               /* Adjusted border for dark mode */
+}
+
+/* Container Styling */
+.container {
+    background-color: var(--container-background);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+/* Header & Typography */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+h1, h2 {
+    font-weight: 600;
+}
+
+/* Section Wrappers */
+.wrap-section, .unwrap-section {
+    margin-bottom: 40px;
+}
+
+/* Editor and Display Components */
+.code-editor, .token-display, .link-display {
+    margin-top: 10px;
+}
+
+.CodeMirror {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    height: auto;
+    min-height: 100px;
+}
+
+/* Input Styles */
+.ttl-input {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.ttl-input label {
+    margin-right: 10px;
+}
+
+textarea,
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--container-background);
+    color: var(--text-color);
+    transition: background-color var(--transition-speed), 
+                color var(--transition-speed), 
+                border-color var(--transition-speed);
+    box-sizing: border-box;
+}
+
+/* Button Styling */
+button {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-speed);
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: var(--primary-hover-color);
+}
+
+/* Token & Link Displays */
+.token-display, .link-display {
+    margin-top: 20px;
+}
+
+.token-display label, .link-display label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.token-input, .link-input {
+    position: relative;
+}
+
+.token-input input, .link-input input {
+    width: 100%;
+    padding-right: 30px; /* Space for the copy icon */
+    cursor: pointer;
+}
+
+.token-input .copy-icon, .link-input .copy-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--text-color);
+}
+
+.token-input .copy-icon:hover, .link-input .copy-icon:hover {
+    color: var(--primary-color);
+}
+
+/* Details Box */
+.details-box {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: var(--container-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 0.9em;
+    transition: background-color var(--transition-speed), border-color var(--transition-speed);
+}
+
+/* Theme Icon */
+.theme-icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.light-mode .theme-icon::after {
+    content: '🌙'; /* Moon icon */
+}
+
+body.night-mode .theme-icon::after {
+    content: '☀️'; /* Sun icon */
+}
+
+/* Unwrap Input Group */
+.unwrap-input-group {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.unwrap-input-group input[type="text"] {
+    margin-bottom: 10px;
+}
+
+/* Dark Mode CodeMirror Adjustments */
+body.night-mode .CodeMirror {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Drop Zone Styles */
 .drop-zone {
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    background-color: var(--background-medium);
-    padding: 1rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border: 0px solid var(--border-color);
+    padding: 0;
+    border-radius: var(--border-radius);
+    position: relative;
+    transition: background-color 0.3s;
 }
 
 .drop-zone.dragover {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
+/* File Upload Icon */
 .file-upload-icon {
-    color: var(--primary-color);
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 1.5em;
+    cursor: pointer;
     opacity: 0.7;
-    transition: all 0.2s ease;
+    transition: opacity var(--transition-speed);
 }
 
 .file-upload-icon:hover {
     opacity: 1;
-    transform: scale(1.1);
 }
 
+/* Success Message */
 .success-message {
-    color: var(--success-color);
-    font-weight: 600;
-    margin-top: 0.5rem;
+    color: var(--secondary-color);
+    font-weight: bold;
+    margin-top: 10px;
 }
 
+/* Info Icon */
 .info-icon {
-    color: var(--accent-color);
+    font-size: 1em;
     cursor: help;
-    transition: all 0.2s ease;
+    margin-left: 5px;
+    color: var(--primary-color);
 }
 
+/* File Bubble */
 .file-bubble {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 10px;
+    margin-right: 5px;
     background-color: var(--secondary-color);
-    color: white;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    margin-right: 0.5rem;
-    transition: all 0.2s ease;
+    color: #fff;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
 }
 
+.file-bubble:hover {
+    background-color: var(--secondary-hover-color);
+}
+
+/* Wrap File Bubble Container */
+#wrapFileBubbleContainer {
+    margin-top: 10px;
+}
+
+/* Size Bar */
 .size-bar {
-    height: 6px;
-    background-color: rgba(139, 143, 147, 0.2);
-    border-radius: 12px;
-    margin-top: 0.75rem;
+    position: relative;
+    height: 10px;
+    background-color: #dee2e6;
+    border-radius: var(--border-radius);
+    margin-top: 10px;
+    overflow: hidden;
 }
 
 .size-bar-inner {
+    height: 100%;
     background-color: var(--primary-color);
-    transition: all 0.2s ease;
+    width: 0%;
+    transition: width 0.3s, background-color 0.3s;
 }
 
-/* Modern Button Styles */
-.button {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+/* Hover Effects for Icons */
+.info-icon:hover, .copy-icon:hover, .theme-icon:hover {
+    text-shadow: 0 0 5px var(--primary-color);
 }
 
-.button-primary {
-    background-color: var(--primary-color);
-    color: white;
+/* Size Bar Hover */
+#sizeBar:hover {
+    box-shadow: 0 0 5px var(--primary-color);
 }
 
-.button-primary:hover {
-    background-color: var(--primary-hover);
+/* Copied Banner */
+#copiedBanner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--secondary-color);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    display: none;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-/* Modern Card Styles */
-.card {
-    background-color: var(--background-medium);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Modern Form Styles */
-.form-input {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    background-color: white;
-    transition: all 0.2s ease;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Modern Hover Effects */
-.hover-scale {
-    transition: transform 0.2s ease;
-}
-
-.hover-scale:hover {
-    transform: scale(1.02);
-}
-
-.hover-translate-y {
-    transition: transform 0.2s ease;
-}
-
-.hover-translate-y:hover {
-    transform: translateY(-2px);
-}
-
-/* Modern Shadow Colors */
-.shadow-sm {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-}
-
-.shadow-md {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+#copiedBanner.show {
+    display: block;
+    opacity: 1;
 }
