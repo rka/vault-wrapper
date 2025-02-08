@@ -22,12 +22,12 @@
         </div>
 
         <div class="wrap-section">
-            <h2>Wrap Data <span class="info-icon" title="You can wrap text or code by entering it below. To upload files, click the paperclip icon or drag and drop files.">ℹ️</span></h2>
+            <h2>Wrap Data <span class="info-icon" data-tooltip="You can wrap text or code by entering it below.\nYou can upload files, click the paperclip icon or drag and drop files.">ℹ️</span></h2>
             <!-- Wrap Input with Drop Zone -->
             <div id="dropZone" class="drop-zone">
                 <div id="wrapInput" class="code-editor"></div>
                 <!-- Paperclip Icon for File Upload -->
-                <span id="fileUploadIcon" class="file-upload-icon" title="Click to upload files">📎</span>
+                <span id="fileUploadIcon" class="file-upload-icon" data-tooltip="Click to upload files">📎</span>
             </div>
             <!-- File Bubble Container for Wrap Section -->
             <div id="wrapFileBubbleContainer"></div>
@@ -37,7 +37,7 @@
             </div>
             <button onclick="wrapData()">Wrap</button>
             <!-- Size Bar -->
-            <div id="sizeBar" class="size-bar" title="Shows the total size of text and files to be wrapped. Maximum allowed is 5 MB.">
+            <div id="sizeBar" class="size-bar" data-tooltip="Shows the total size of text and files to be wrapped.\nMaximum allowed is 5 MB.">
                 <div id="sizeBarInner" class="size-bar-inner"></div>
             </div>
             <!-- Success Message -->
@@ -61,7 +61,7 @@
         </div>
 
         <div class="unwrap-section">
-            <h2>Unwrap Data <span class="info-icon" title="Enter a wrapped token to unwrap and retrieve the original data or files.">ℹ️</span></h2>
+            <h2>Unwrap Data <span class="info-icon" data-tooltip="Enter a wrapped token to unwrap and retrieve the original data or files.">ℹ️</span></h2>
             <div class="unwrap-input-group">
                 <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
             </div>
