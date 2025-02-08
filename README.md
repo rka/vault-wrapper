@@ -20,7 +20,7 @@ Vault Data Wrapper is a web application that utilizes Hashicorp Vault's wrap fea
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/659d14de-87a7-40c1-be52-6f0644211026)
+![alt text](image.png)
 
 
 ## Getting Started
