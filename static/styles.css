@@ -163,7 +163,7 @@ button:hover {
     font-size: 1.5em;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 body.light-mode .theme-icon::after {
@@ -303,57 +303,4 @@ body.night-mode .CodeMirror {
 #copiedBanner.show {
     display: block;
     opacity: 1;
-}
-
-/* Tooltip container */
-[data-tooltip] {
-  position: relative;
-  display: inline-block;
-}
-
-/* Tooltip text */
-[data-tooltip]:before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: 200px; /* Adjust as needed */
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 5px;
-  font-size: 0.8em;
-  z-index: 1;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.3s;
-  margin-bottom: 5px;
-  white-space: pre-line; /* Allows line breaks in tooltip text */
-}
-
-/* Tooltip arrow */
-[data-tooltip]:after {
-  content: "";
-  position: absolute;
-  top: auto;
-  bottom: calc(100% - 5px);
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #333 transparent transparent transparent;
-  z-index: 1;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-/* Show the tooltip on hover */
-[data-tooltip]:hover:before,
-[data-tooltip]:hover:after {
-  visibility: visible;
-  opacity: 1;
 }
