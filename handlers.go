@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/sirupsen/logrus"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,9 +12,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func wrapHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Handling wrap request")
+	log.Println("Handling wrap request")
 	if r.Method != http.MethodPost {
-		logrus.Warn("Method not allowed for wrap request")
+		log.Println("Method not allowed for wrap request")
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -25,7 +24,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		TTL  string      `json:"ttl"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		logrus.Error("Error decoding wrap request body: ", err)
+		log.Println("Error decoding wrap request body:", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -33,7 +32,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate TTL
 	ttlValue, err := strconv.Atoi(input.TTL)
 	if err != nil || ttlValue <= 0 {
-		logrus.Error("Invalid TTL value: ", input.TTL)
+		log.Println("Invalid TTL value:", input.TTL)
 		http.Error(w, "Invalid TTL value. Must be a positive integer.",
 			http.StatusBadRequest)
 		return
@@ -41,7 +40,7 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 
 	dataBytes, err := json.Marshal(input.Data)
 	if err != nil {
-		logrus.Error("Error marshalling data: ", err)
+		log.Println("Error marshalling data:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -49,12 +48,12 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	dataString := string(dataBytes)
 	token, details, err := wrapData(dataString, input.TTL)
 	if err != nil {
-		logrus.Error("Error wrapping data: ", err)
+		log.Println("Error wrapping data:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	logrus.Debug("Data wrapped successfully")
+	log.Println("Data wrapped successfully")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"token":   token,
 		"details": details,
@@ -62,9 +61,9 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func unwrapHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Handling unwrap request")
+	log.Println("Handling unwrap request")
 	if r.Method != http.MethodPost {
-		logrus.Warn("Method not allowed for unwrap request")
+		log.Println("Method not allowed for unwrap request")
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -73,14 +72,14 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		Token string `json:"token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		logrus.Error("Error decoding unwrap request body: ", err)
+		log.Println("Error decoding unwrap request body:", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	dataMap, err := unwrapData(input.Token)
 	if err != nil {
-		logrus.Error("Error unwrapping data: ", err)
+		log.Println("Error unwrapping data:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -88,7 +87,7 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	// The data is stored under the "data" key
 	dataString, ok := dataMap["data"].(string)
 	if !ok {
-		logrus.Error("Error retrieving unwrapped data")
+		log.Println("Error retrieving unwrapped data")
 		http.Error(w, "Error retrieving unwrapped data",
 			http.StatusInternalServerError)
 		return
@@ -96,11 +95,11 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 
 	var data interface{}
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
-		logrus.Error("Error unmarshalling data: ", err)
+		log.Println("Error unmarshalling data:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	logrus.Debug("Data unwrapped successfully")
+	log.Println("Data unwrapped successfully")
 	json.NewEncoder(w).Encode(data)
 }

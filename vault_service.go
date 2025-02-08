@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -18,18 +18,18 @@ var (
 func init() {
 	if vaultAddr == "" {
 		vaultAddr = "http://vault:8200" // Default value if not set
-		logrus.Warn("VAULT_ADDR not set, using default value: http://vault:8200")
+		log.Println("VAULT_ADDR not set, using default value: http://vault:8200")
 	}
 	if vaultToken == "" {
 		vaultToken = "root" // Default value if not set
-		logrus.Warn("VAULT_TOKEN not set, using default value: root")
+		log.Println("VAULT_TOKEN not set, using default value: root")
 	}
 }
 
 func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	client, err := api.NewClient(&api.Config{Address: vaultAddr})
 	if err != nil {
-		logrus.Errorf("wrapData: Error creating Vault client: %v", err)
+		log.Printf("wrapData: Error creating Vault client: %v\n", err)
 		return "", nil, fmt.Errorf("wrapData: failed to create Vault client: %w",
 			err)
 	}
@@ -39,7 +39,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	// Convert TTL to time.Duration
 	ttlDuration, err := time.ParseDuration(ttl + "s")
 	if err != nil {
-		logrus.Errorf("wrapData: Invalid TTL: %v, TTL: %s", err, ttl)
+		log.Printf("wrapData: Invalid TTL: %v, TTL: %s\n", err, ttl)
 		return "", nil, fmt.Errorf("wrapData: invalid TTL: %w, TTL: %s", err, ttl)
 	}
 	ttlString := ttlDuration.String()
@@ -61,7 +61,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 
 	// Set the request body
 	if err := req.SetJSONBody(requestData); err != nil {
-		logrus.Errorf("wrapData: Error setting request body: %v", err)
+		log.Printf("wrapData: Error setting request body: %v\n", err)
 		return "", nil, fmt.Errorf("wrapData: failed to set request body: %w",
 			err)
 	}
@@ -69,7 +69,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	// Send the request with context
 	resp, err := client.RawRequestWithContext(ctx, req)
 	if err != nil {
-		logrus.Errorf("wrapData: Error wrapping data: %v", err)
+		log.Printf("wrapData: Error wrapping data: %v\n", err)
 		return "", nil, fmt.Errorf("wrapData: failed to wrap data: %w", err)
 	}
 	defer resp.Body.Close()
@@ -77,7 +77,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	// Parse the response
 	secret, err := api.ParseSecret(resp.Body)
 	if err != nil {
-		logrus.Errorf("wrapData: Error parsing wrap response: %v", err)
+		log.Printf("wrapData: Error parsing wrap response: %v\n", err)
 		return "", nil, fmt.Errorf("wrapData: failed to parse wrap response: %w",
 			err)
 	}
@@ -88,7 +88,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 func unwrapData(token string) (map[string]interface{}, error) {
 	client, err := api.NewClient(&api.Config{Address: vaultAddr})
 	if err != nil {
-		logrus.Errorf("unwrapData: Error creating Vault client: %v", err)
+		log.Printf("unwrapData: Error creating Vault client: %v\n", err)
 		return nil, fmt.Errorf("unwrapData: failed to create Vault client: %w",
 			err)
 	}
@@ -102,7 +102,7 @@ func unwrapData(token string) (map[string]interface{}, error) {
 	// Unwrap the data with context
 	secret, err := client.Logical().UnwrapWithContext(ctx, "")
 	if err != nil {
-		logrus.Errorf("unwrapData: Error unwrapping data: %v, Token: %s", err,
+		log.Printf("unwrapData: Error unwrapping data: %v, Token: %s\n", err,
 			token)
 		return nil, fmt.Errorf("unwrapData: failed to unwrap data: %w, Token: %s",
 			err, token)

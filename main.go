@@ -2,23 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
 )
 
 func init() {
-	// Set up logrus
-	logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
+	// Set up log
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 
 func checkVaultConnectivity() error {
-	logrus.Info("Checking Vault connectivity...")
+	log.Println("Checking Vault connectivity...")
 	client, err := api.NewClient(&api.Config{Address: vaultAddr})
 	if err != nil {
 		return fmt.Errorf("failed to create Vault client: %v", err)
@@ -33,14 +30,14 @@ func checkVaultConnectivity() error {
 	}
 
 	if !health.Initialized {
-		return fmt.Errorf("Vault is not initialized")
+		return fmt.Errorf("vault is not initialized")
 	}
 
 	if health.Sealed {
-		return fmt.Errorf("Vault is sealed")
+		return fmt.Errorf("vault is sealed")
 	}
 
-	logrus.Info("Vault connectivity check passed")
+	log.Println("Vault connectivity check passed")
 	return nil
 }
 
@@ -48,7 +45,7 @@ func main() {
 	// Check Vault connectivity
 	for i := 0; i < 5; i++ {
 		if err := checkVaultConnectivity(); err != nil {
-			logrus.Warnf("Vault connectivity check failed: %v. Retrying in 5 seconds...", err)
+			log.Printf("Vault connectivity check failed: %v. Retrying in 5 seconds...\n", err)
 			time.Sleep(5 * time.Second)
 		} else {
 			break
@@ -63,8 +60,8 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	logrus.Info("Server starting on :3001")
+	log.Println("Server starting on :3001")
 	if err := http.ListenAndServe(":3001", nil); err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }
