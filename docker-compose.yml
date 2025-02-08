@@ -46,6 +46,9 @@ services:
     hostname: wrap
     # ports:
     #   - "3001:3001"
+    environment:
+      - VAULT_ADDR=http://vault:8200 # Or your Vault address
+      - VAULT_TOKEN=root # Or your Vault token
     labels:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true
