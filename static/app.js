@@ -2,14 +2,14 @@
 let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
     lineNumbers: true,
     mode: 'javascript',
-    theme: 'default',
+    theme: 'dracula',
     lineWrapping: true
 });
 
 let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
     lineNumbers: true,
     mode: 'javascript',
-    theme: 'default',
+    theme: 'dracula',
     readOnly: true,
     lineWrapping: true
 });
@@ -337,13 +337,13 @@ function showCopiedBanner() {
 function toggleNightMode() {
     document.body.classList.toggle('night-mode');
     document.body.classList.toggle('light-mode');
-    const theme = document.body.classList.contains('night-mode') ? 'material-darker' : 'default';
-    wrapEditor.setOption('theme', theme);
-    unwrapResultEditor.setOption('theme', theme);
+    // Keep using dracula theme for both modes
+    wrapEditor.setOption('theme', 'dracula');
+    unwrapResultEditor.setOption('theme', 'dracula');
 
     // Save preference in cookie
     const mode = document.body.classList.contains('night-mode') ? 'dark' : 'light';
-    document.cookie = `theme=${mode};path=/;max-age=31536000`; // Expires in 1 year
+    document.cookie = `theme=${mode};path=/;max-age=31536000`;
 }
 
 // On page load, check if a token is in the URL and unwrap it
@@ -358,13 +358,13 @@ window.onload = function() {
     if (cookies.theme === 'dark') {
         document.body.classList.add('night-mode');
         document.body.classList.remove('light-mode');
-        wrapEditor.setOption('theme', 'material-darker');
-        unwrapResultEditor.setOption('theme', 'material-darker');
+        wrapEditor.setOption('theme', 'dracula');
+        unwrapResultEditor.setOption('theme', 'dracula');
     } else {
         document.body.classList.add('light-mode');
         document.body.classList.remove('night-mode');
-        wrapEditor.setOption('theme', 'default');
-        unwrapResultEditor.setOption('theme', 'default');
+        wrapEditor.setOption('theme', 'dracula');
+        unwrapResultEditor.setOption('theme', 'dracula');
     }
 
     const urlParams = new URLSearchParams(window.location.search);
