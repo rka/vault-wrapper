@@ -1,9 +1,10 @@
-// Initialize CodeMirror editors
+// Initialize CodeMirror editors with drop prevention
 let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
     lineNumbers: true,
     mode: 'javascript',
     theme: 'dracula',
-    lineWrapping: true
+    lineWrapping: true,
+    dragDrop: false
 });
 
 let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
@@ -14,37 +15,40 @@ let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
     lineWrapping: true
 });
 
-// Get elements
+// Core elements
 const dropZone = document.getElementById('dropZone');
 const fileUploadIcon = document.getElementById('fileUploadIcon');
 const wrapSuccess = document.getElementById('wrapSuccess');
 const unwrapSuccess = document.getElementById('unwrapSuccess');
-
-// Variable to hold uploaded files data
+const maxSize = 5 * 1024 * 1024;
 let uploadedFiles = [];
-
-// Maximum allowed size (5 MB)
-const maxSize = 5 * 1024 * 1024; // 5 MB limit
 
 // Handle drag over
 dropZone.addEventListener('dragover', (event) => {
     event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
     dropZone.classList.add('dragover');
+});
+
+// Prevent default drop behavior that would read text files as text
+dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dropZone.classList.remove('dragover');
+    
+    // Handle only as files, never as text
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileUpload(files);
+    }
+    
+    // Clear any text data that might have been interpreted
+    event.dataTransfer.clearData();
 });
 
 // Handle drag leave
 dropZone.addEventListener('dragleave', () => {
     dropZone.classList.remove('dragover');
-});
-
-// Handle drop
-dropZone.addEventListener('drop', (event) => {
-    event.preventDefault();
-    dropZone.classList.remove('dragover');
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        handleFileUpload(files);
-    }
 });
 
 // Handle file upload icon click
@@ -60,6 +64,27 @@ fileUploadIcon.addEventListener('click', () => {
     fileInput.click();
 });
 
+// Prevent drop on the CodeMirror element explicitly
+wrapEditor.on('drop', (cm, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handleFileUpload(event.dataTransfer.files);
+});
+
+// Prevent dragover on CodeMirror
+wrapEditor.on('dragover', (cm, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dropZone.classList.add('dragover');
+});
+
+// Handle drag leave
+wrapEditor.on('dragleave', (cm, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dropZone.classList.remove('dragover');
+});
+
 // Handle file uploads (multiple files)
 function handleFileUpload(files) {
     for (const file of files) {
@@ -68,20 +93,19 @@ function handleFileUpload(files) {
             continue;
         }
 
+        // Always treat as file, regardless of type
         const reader = new FileReader();
         reader.onload = function(e) {
-            const base64Data = e.target.result.split(',')[1]; // Remove data URL prefix
+            const base64Data = e.target.result.split(',')[1];
             const uploadedFile = {
                 isFile: true,
                 name: file.name,
-                type: file.type,
+                type: file.type || 'text/plain', // Fallback type for unknown files
                 data: base64Data,
-                size: file.size // Include file size
+                size: file.size
             };
             uploadedFiles.push(uploadedFile);
-            // Display the file bubbles in the wrap section
             displayWrapFileBubbles();
-            // Update size bar
             updateSizeBar();
         };
         reader.readAsDataURL(file);
@@ -131,25 +155,23 @@ function updateSizeBar() {
     const textSize = getTextSizeInBytes(inputText);
     const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
     const totalSize = textSize + filesSize;
-
-    // Get the size bar inner div
-    const sizeBarInner = document.getElementById('sizeBarInner');
-
     const percentage = (totalSize / maxSize) * 100;
     const cappedPercentage = Math.min(percentage, 100);
 
-    sizeBarInner.style.width = `${cappedPercentage}%`;
-
-    // Change color if over limit
-    if (totalSize > maxSize) {
-        sizeBarInner.style.backgroundColor = 'red';
-    } else {
-        sizeBarInner.style.backgroundColor = 'var(--primary-color)';
-    }
-
-    // Display the size as text in the title
     const sizeBar = document.getElementById('sizeBar');
-    sizeBar.title = `Total size: ${formatFileSize(totalSize)} / ${formatFileSize(maxSize)}. Maximum allowed is 5 MB.`;
+      const sizeBarInner = document.getElementById('sizeBarInner');
+    sizeBarInner.style.width = `${cappedPercentage}%`;
+    
+    const totalSizeFormatted = formatFileSize(totalSize);
+    const maxSizeFormatted = formatFileSize(maxSize);
+    sizeBar.setAttribute('data-size', `${totalSizeFormatted} / ${maxSizeFormatted}`);
+
+    sizeBarInner.classList.remove('warning', 'error');
+    if (percentage > 90) {
+        sizeBarInner.classList.add('error');
+    } else if (percentage > 75) {
+        sizeBarInner.classList.add('warning');
+    }
 }
 
 // Update size bar when text changes
