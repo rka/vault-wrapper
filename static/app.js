@@ -87,6 +87,14 @@ wrapEditor.on('dragleave', (cm, event) => {
 
 // Handle file uploads (multiple files)
 function handleFileUpload(files) {
+    const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+    const currentSize = uploadedFiles.reduce((sum, file) => sum + file.size, 0);
+    
+    if (totalSize + currentSize > maxSize) {
+        alert(`Adding these files would exceed the 5 MB limit.`);
+        return;
+    }
+
     for (const file of files) {
         if (file.size > maxSize) {
             alert(`File "${file.name}" exceeds 5 MB limit and will not be added.`);
@@ -178,6 +186,9 @@ function updateSizeBar() {
 wrapEditor.on('change', updateSizeBar);
 
 async function wrapData() {
+    const wrapButton = document.querySelector('.wrap-section button');
+    wrapButton.classList.add('loading');
+    
     const inputText = wrapEditor.getValue();
     const textSize = getTextSizeInBytes(inputText);
     const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
@@ -185,6 +196,7 @@ async function wrapData() {
 
     if (totalSize > maxSize) {
         alert('Total size exceeds the maximum allowed size of 5 MB.');
+        wrapButton.classList.remove('loading');
         return;
     }
 
@@ -204,6 +216,7 @@ async function wrapData() {
 
     if (Object.keys(dataObj).length === 0) {
         alert('Please enter text or upload files to wrap.');
+        wrapButton.classList.remove('loading');
         return;
     }
 
@@ -238,10 +251,15 @@ async function wrapData() {
         updateSizeBar();
     } catch (error) {
         detailsDiv.textContent = `Error: ${error.message}`;
+    } finally {
+        wrapButton.classList.remove('loading');
     }
 }
 
 async function unwrapData(token) {
+    const unwrapButton = document.querySelector('.unwrap-section button');
+    unwrapButton.classList.add('loading');
+    
     const input = token || document.getElementById('unwrapInput').value;
     const resultEditor = unwrapResultEditor;
 
@@ -325,6 +343,8 @@ async function unwrapData(token) {
         console.error('Error during unwrapping:', error);
         resultEditor.setValue(`Error: ${error.message}`);
         resultEditor.getWrapperElement().style.display = 'block';
+    } finally {
+        unwrapButton.classList.remove('loading');
     }
 }
 

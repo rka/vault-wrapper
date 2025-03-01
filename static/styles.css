@@ -170,6 +170,11 @@ button:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+.theme-icon:hover {
+    transform: rotate(360deg);
 }
 
 body.light-mode .theme-icon::after {
@@ -207,7 +212,8 @@ body.night-mode .CodeMirror {
 }
 
 .drop-zone.dragover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 2px dashed var(--primary-color);
 }
 
 /* File Upload Icon */
@@ -218,11 +224,12 @@ body.night-mode .CodeMirror {
     font-size: 1.5em;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity var(--transition-speed);
+    transition: opacity var(--transition-speed), transform 0.2s ease-in-out;
 }
 
 .file-upload-icon:hover {
     opacity: 1;
+    transform: scale(1.2);
 }
 
 /* Success Message */
@@ -250,11 +257,13 @@ body.night-mode .CodeMirror {
     color: #fff;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: background-color var(--transition-speed);
+    transition: background-color var(--transition-speed), transform 0.2s ease-in-out;
+    transform: scale(1);
 }
 
 .file-bubble:hover {
     background-color: var(--secondary-hover-color);
+    transform: scale(1.05);
 }
 
 /* Wrap File Bubble Container */
@@ -339,4 +348,31 @@ body.night-mode .CodeMirror {
 #copiedBanner.show {
     display: block;
     opacity: 1;
+}
+
+/* Loading State */
+.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: loading 0.8s linear infinite;
+}
+
+@keyframes loading {
+    to {
+        transform: rotate(360deg);
+    }
 }
