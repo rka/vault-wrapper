@@ -8,16 +8,16 @@ RUN go mod download
 
 COPY . ./
 
-RUN go build -o /out/main .
+RUN go build -o main . 
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /out/main /app/main
+COPY --from=builder /app/main /app/main 
 
 COPY --from=builder /app/static /app/static
 
 EXPOSE 3001
 
-CMD ["./main"]
+CMD ["./main"] 
