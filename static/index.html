@@ -42,6 +42,8 @@
             <div id="sizeBar" class="size-bar" data-size="0 B / 5 MB">
                 <div id="sizeBarInner" class="size-bar-inner"></div>
             </div>
+            <!-- Error Message -->
+            <div id="wrapError" class="error-message" style="display: none;"></div>
             <!-- Success Message -->
             <div id="wrapSuccess" class="success-message" style="display: none;">Data wrapped successfully!</div>
             <!-- Display Wrapped Token and URL -->
@@ -72,6 +74,8 @@
                 <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
             </div>
             <button onclick="unwrapData()">Unwrap</button>
+            <!-- Error Message -->
+            <div id="unwrapError" class="error-message" style="display: none;"></div>
             <!-- Success Message -->
             <div id="unwrapSuccess" class="success-message" style="display: none;">Data unwrapped successfully!</div>
             <!-- Unwrap Result Container -->

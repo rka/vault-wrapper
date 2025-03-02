@@ -187,15 +187,20 @@ wrapEditor.on('change', updateSizeBar);
 
 async function wrapData() {
     const wrapButton = document.querySelector('.wrap-section button');
+    const errorDiv = document.getElementById('wrapError');
     wrapButton.classList.add('loading');
     
+    // Clear previous error
+    errorDiv.style.display = 'none';
+
     const inputText = wrapEditor.getValue();
     const textSize = getTextSizeInBytes(inputText);
     const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
     const totalSize = textSize + filesSize;
 
     if (totalSize > maxSize) {
-        alert('Total size exceeds the maximum allowed size of 5 MB.');
+        errorDiv.textContent = 'Total size exceeds the maximum allowed size of 5 MB.';
+        errorDiv.style.display = 'block';
         wrapButton.classList.remove('loading');
         return;
     }
@@ -215,7 +220,8 @@ async function wrapData() {
     }
 
     if (Object.keys(dataObj).length === 0) {
-        alert('Please enter text or upload files to wrap.');
+        errorDiv.textContent = 'Please enter text or upload files to wrap.';
+        errorDiv.style.display = 'block';
         wrapButton.classList.remove('loading');
         return;
     }
@@ -254,7 +260,9 @@ async function wrapData() {
         // Update size bar
         updateSizeBar();
     } catch (error) {
-        detailsDiv.textContent = `Error: ${error.message}`;
+        errorDiv.textContent = `Error: ${error.message}`;
+        errorDiv.style.display = 'block';
+        detailsDiv.textContent = '';
     } finally {
         wrapButton.classList.remove('loading');
     }
@@ -263,7 +271,13 @@ async function wrapData() {
 async function unwrapData(token) {
     const unwrapButton = document.querySelector('.unwrap-section button');
     const resultEditor = unwrapResultEditor;
+    const errorDiv = document.getElementById('unwrapError');
     unwrapButton.classList.add('loading');
+    
+    // Clear previous states
+    errorDiv.style.display = 'none';
+    resultEditor.setValue('');
+    resultEditor.getWrapperElement().style.display = 'none';
     
     try {
         const tokenToUnwrap = token || document.getElementById('unwrapInput').value;
@@ -272,47 +286,36 @@ async function unwrapData(token) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ token: tokenToUnwrap }) // Fixed: using the correct token variable
+            body: JSON.stringify({ token: tokenToUnwrap })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
             if (response.status === 404) {
-                resultEditor.setValue('Error: ' + errorText + '\n\nTokens can only be used once and are permanently deleted after unwrapping.');
+                errorDiv.textContent = 'This token has already been used or does not exist. Tokens can only be unwrapped once and are permanently deleted after unwrapping.';
             } else {
-                resultEditor.setValue('Error: ' + errorText);
+                errorDiv.textContent = 'Error: ' + errorText;
             }
-            resultEditor.getWrapperElement().style.display = 'block';
+            errorDiv.style.display = 'block';
             return;
         }
 
         const data = await response.json();
-        console.log('Unwrapped data:', data);
-
-        // Get containers
+        let contentAdded = false;
         const fileBubbleContainer = document.getElementById('fileBubbleContainer');
-
-        // Clear previous content
-        resultEditor.setValue('');
         fileBubbleContainer.innerHTML = '';
 
-        let contentAdded = false;
-
         if (data.files && Array.isArray(data.files)) {
-            console.log('Files data found:', data.files);
             data.files.forEach(file => {
-                // Reconstruct file from Base64 data
                 const blob = base64ToBlob(file.data, file.type);
                 const url = URL.createObjectURL(blob);
 
-                // Create file bubble
                 const fileBubble = document.createElement('div');
                 fileBubble.className = 'file-bubble';
                 const fileSizeFormatted = formatFileSize(file.size);
                 fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
                 fileBubble.title = 'Click to download';
 
-                // Attach click event
                 fileBubble.addEventListener('click', () => {
                     const downloadLink = document.createElement('a');
                     downloadLink.href = url;
@@ -329,30 +332,25 @@ async function unwrapData(token) {
         }
 
         if (data.text) {
-            console.log('Text data found:', data.text);
-            // Display text data
             resultEditor.setValue(data.text);
             resultEditor.getWrapperElement().style.display = 'block';
             contentAdded = true;
-        } else {
-            // Hide the editor if no text is present
-            resultEditor.getWrapperElement().style.display = 'none';
         }
 
         if (!contentAdded) {
-            resultEditor.setValue('No data found.');
-            resultEditor.getWrapperElement().style.display = 'block';
+            errorDiv.textContent = 'No data found in the unwrapped content.';
+            errorDiv.style.display = 'block';
+        } else {
+            unwrapSuccess.textContent = 'Data unwrapped successfully!';
+            unwrapSuccess.style.display = 'block';
+            setTimeout(() => {
+                unwrapSuccess.style.display = 'none';
+            }, 3000);
         }
-
-        unwrapSuccess.textContent = 'Data unwrapped successfully!';
-        unwrapSuccess.style.display = 'block';
-        setTimeout(() => {
-            unwrapSuccess.style.display = 'none';
-        }, 3000);
     } catch (error) {
         console.error('Error during unwrapping:', error);
-        resultEditor.setValue(`Error: ${error.message}\n\nNote: Tokens can only be unwrapped once.`);
-        resultEditor.getWrapperElement().style.display = 'block';
+        errorDiv.textContent = 'An error occurred while unwrapping the data.';
+        errorDiv.style.display = 'block';
     } finally {
         unwrapButton.classList.remove('loading');
     }

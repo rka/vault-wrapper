@@ -170,11 +170,17 @@ button:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.1s ease-in-out;
 }
 
 .theme-icon:hover {
-    transform: rotate(360deg);
+    animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
 }
 
 body.light-mode .theme-icon::after {
@@ -399,4 +405,21 @@ body.night-mode .token-warning {
 
 .warning-icon {
     font-size: 1.2em;
+}
+
+/* Error Message */
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: var(--border-radius);
+    font-size: 0.95em;
+}
+
+body.night-mode .error-message {
+    color: #ff6b6b;
+    background-color: rgba(220, 53, 69, 0.1);
+    border-color: #dc3545;
 }
