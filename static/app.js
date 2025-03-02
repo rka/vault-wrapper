@@ -238,6 +238,10 @@ async function wrapData() {
         const url = new URL(window.location.href);
         url.searchParams.set('token', data.token);
         document.getElementById('wrappedLink').value = url.toString();
+        
+        // Show token warning only after successful wrap
+        document.querySelector('.token-warning').style.display = 'flex';
+        
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
         wrapSuccess.textContent = 'Data wrapped successfully!';
         wrapSuccess.style.display = 'block';
@@ -258,11 +262,9 @@ async function wrapData() {
 
 async function unwrapData(token) {
     const unwrapButton = document.querySelector('.unwrap-section button');
+    const resultEditor = unwrapResultEditor;
     unwrapButton.classList.add('loading');
     
-    const input = token || document.getElementById('unwrapInput').value;
-    const resultEditor = unwrapResultEditor;
-
     try {
         const response = await fetch('/unwrap', {
             method: 'POST',
@@ -273,7 +275,14 @@ async function unwrapData(token) {
         });
 
         if (!response.ok) {
-            throw new Error('Unwrap request failed');
+            const errorText = await response.text();
+            if (response.status === 404) {
+                resultEditor.setValue('Error: ' + errorText + '\n\nTokens can only be used once and are permanently deleted after unwrapping.');
+            } else {
+                resultEditor.setValue('Error: ' + errorText);
+            }
+            resultEditor.getWrapperElement().style.display = 'block';
+            return;
         }
 
         const data = await response.json();
@@ -341,7 +350,7 @@ async function unwrapData(token) {
         }, 3000);
     } catch (error) {
         console.error('Error during unwrapping:', error);
-        resultEditor.setValue(`Error: ${error.message}`);
+        resultEditor.setValue(`Error: ${error.message}\n\nNote: Tokens can only be unwrapped once.`);
         resultEditor.getWrapperElement().style.display = 'block';
     } finally {
         unwrapButton.classList.remove('loading');
@@ -419,3 +428,9 @@ window.onload = function() {
     // Initialize size bar
     updateSizeBar();
 };
+
+// Add this after the existing window.onload function
+window.addEventListener('DOMContentLoaded', () => {
+    // Hide token warning initially
+    document.querySelector('.token-warning').style.display = 'none';
+});
