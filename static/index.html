@@ -47,25 +47,27 @@
             <!-- Success Message -->
             <div id="wrapSuccess" class="success-message" style="display: none;">Data wrapped successfully!</div>
             <!-- Display Wrapped Token and URL -->
-            <div class="token-display">
-                <label for="wrappedToken">Wrapped Token:</label>
-                <div class="token-warning">
-                    <span class="warning-icon">⚠️</span>
-                    <span>This token can only be unwrapped once. After unwrapping, the data will be permanently deleted.</span>
+            <div id="wrapResponseContainer" style="display: none;">
+                <div class="token-display">
+                    <label for="wrappedToken">Wrapped Token:</label>
+                    <div class="token-warning">
+                        <span class="warning-icon">⚠️</span>
+                        <span>This token can only be unwrapped once. After unwrapping, the data will be permanently deleted.</span>
+                    </div>
+                    <div class="token-input">
+                        <input type="text" id="wrappedToken" readonly onclick="copyToClipboard('wrappedToken')" placeholder="Click to copy token">
+                        <span class="copy-icon" onclick="copyToClipboard('wrappedToken')">📋</span>
+                    </div>
                 </div>
-                <div class="token-input">
-                    <input type="text" id="wrappedToken" readonly onclick="copyToClipboard('wrappedToken')" placeholder="Click to copy token">
-                    <span class="copy-icon" onclick="copyToClipboard('wrappedToken')">📋</span>
+                <div class="link-display">
+                    <label for="wrappedLink">Shareable Link:</label>
+                    <div class="link-input">
+                        <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Click to copy link">
+                        <span class="copy-icon" onclick="copyToClipboard('wrappedLink')">📋</span>
+                    </div>
                 </div>
+                <div id="wrapDetails" class="details-box"></div>
             </div>
-            <div class="link-display">
-                <label for="wrappedLink">Shareable Link:</label>
-                <div class="link-input">
-                    <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Click to copy link">
-                    <span class="copy-icon" onclick="copyToClipboard('wrappedLink')">📋</span>
-                </div>
-            </div>
-            <div id="wrapDetails" class="details-box"></div>
         </div>
 
         <div class="unwrap-section">

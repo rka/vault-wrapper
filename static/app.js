@@ -240,6 +240,10 @@ async function wrapData() {
         }
 
         const data = await response.json();
+        
+        // Show the response container
+        document.getElementById('wrapResponseContainer').style.display = 'block';
+        
         document.getElementById('wrappedToken').value = data.token;
         const url = new URL(window.location.href);
         url.searchParams.set('token', data.token);
@@ -248,7 +252,11 @@ async function wrapData() {
         // Show token warning only after successful wrap
         document.querySelector('.token-warning').style.display = 'flex';
         
-        detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
+        detailsDiv.className = 'info-box';
+        detailsDiv.innerHTML = `
+            <h3>Wrap Details</h3>
+            <pre>${JSON.stringify(data.details, null, 2)}</pre>
+        `;
         wrapSuccess.textContent = 'Data wrapped successfully!';
         wrapSuccess.style.display = 'block';
         setTimeout(() => {
@@ -263,6 +271,8 @@ async function wrapData() {
         errorDiv.textContent = `Error: ${error.message}`;
         errorDiv.style.display = 'block';
         detailsDiv.textContent = '';
+        // Hide the response container on error
+        document.getElementById('wrapResponseContainer').style.display = 'none';
     } finally {
         wrapButton.classList.remove('loading');
     }
@@ -308,7 +318,7 @@ async function unwrapData(token) {
         // Display token info if available
         if (data.wrapping_info) {
             const tokenInfoDiv = document.createElement('div');
-            tokenInfoDiv.className = 'token-info';
+            tokenInfoDiv.className = 'info-box';
             tokenInfoDiv.innerHTML = `
                 <h3>Token Information</h3>
                 <pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>
@@ -319,6 +329,11 @@ async function unwrapData(token) {
         // Handle unwrapped data
         if (data.data) {
             if (data.data.files && Array.isArray(data.data.files)) {
+                const filesDiv = document.createElement('div');
+                filesDiv.className = 'info-box';
+                filesDiv.innerHTML = '<h3>Files</h3>';
+                fileBubbleContainer.appendChild(filesDiv);
+                
                 data.data.files.forEach(file => {
                     const blob = base64ToBlob(file.data, file.type);
                     const url = URL.createObjectURL(blob);
@@ -339,13 +354,19 @@ async function unwrapData(token) {
                         URL.revokeObjectURL(url);
                     });
 
-                    fileBubbleContainer.appendChild(fileBubble);
-                    contentAdded = true;
+                    filesDiv.appendChild(fileBubble);
                 });
+                contentAdded = true;
             }
 
             if (data.data.text) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'info-box';
+                textDiv.innerHTML = '<h3>Text Content</h3>';
+                fileBubbleContainer.appendChild(textDiv);
+                
                 resultEditor.setValue(data.data.text);
+                textDiv.appendChild(resultEditor.getWrapperElement());
                 resultEditor.getWrapperElement().style.display = 'block';
                 // Force CodeMirror to refresh and render properly
                 setTimeout(() => {
@@ -444,6 +465,9 @@ window.onload = function() {
 
     // Initialize size bar
     updateSizeBar();
+    
+    // Hide response container initially
+    document.getElementById('wrapResponseContainer').style.display = 'none';
 };
 
 // Add this after the existing window.onload function

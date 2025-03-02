@@ -150,6 +150,46 @@ button:hover {
     color: var(--primary-color);
 }
 
+/* Info Box - Unified style for all information displays */
+.info-box {
+    background-color: var(--container-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.info-box h3 {
+    margin: 0 0 10px 0;
+    color: var(--text-color);
+    font-size: 1.1em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.info-box pre {
+    background-color: var(--background-color);
+    padding: 12px;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    margin: 0;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* Update existing classes to use unified style */
+.details-box {
+    margin-top: 20px;
+}
+
+.token-info {
+    margin-bottom: 20px;
+}
+
+.details-box, .token-info {
+    composes: info-box;
+}
+
 /* Details Box */
 .details-box {
     margin-top: 20px;
