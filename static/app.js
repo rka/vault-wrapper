@@ -312,16 +312,18 @@ async function unwrapData(token) {
         const fileBubbleContainer = document.getElementById('fileBubbleContainer');
         fileBubbleContainer.innerHTML = '';
 
-        // Display token info if available, without header
-        if (data.wrapping_info) {
-            const tokenInfoDiv = document.createElement('div');
-            tokenInfoDiv.className = 'info-box';
-            tokenInfoDiv.innerHTML = `<pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>`;
-            fileBubbleContainer.appendChild(tokenInfoDiv);
-        }
-
-        // Handle unwrapped data
+        // Handle unwrapped data first
         if (data.data) {
+            if (data.data.text) {
+                resultEditor.setValue(data.data.text);
+                resultEditor.getWrapperElement().style.display = 'block';
+                // Force CodeMirror to refresh and render properly
+                setTimeout(() => {
+                    resultEditor.refresh();
+                }, 1);
+                contentAdded = true;
+            }
+
             if (data.data.files && Array.isArray(data.data.files)) {
                 const filesDiv = document.createElement('div');
                 filesDiv.className = 'info-box';
@@ -352,16 +354,14 @@ async function unwrapData(token) {
                 });
                 contentAdded = true;
             }
+        }
 
-            if (data.data.text) {
-                resultEditor.setValue(data.data.text);
-                resultEditor.getWrapperElement().style.display = 'block';
-                // Force CodeMirror to refresh and render properly
-                setTimeout(() => {
-                    resultEditor.refresh();
-                }, 1);
-                contentAdded = true;
-            }
+        // Display token info if available (after the content)
+        if (data.wrapping_info) {
+            const tokenInfoDiv = document.createElement('div');
+            tokenInfoDiv.className = 'info-box';
+            tokenInfoDiv.innerHTML = `<pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>`;
+            fileBubbleContainer.appendChild(tokenInfoDiv);
         }
 
         if (!contentAdded) {

@@ -482,3 +482,21 @@ body.night-mode .error-message {
     overflow-x: auto;
     margin: 0;
 }
+
+/* Button container with inline success message */
+.button-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.success-message {
+    color: var(--secondary-color);
+    font-weight: bold;
+    display: none;
+}
+
+.success-message.show {
+    display: inline;
+}

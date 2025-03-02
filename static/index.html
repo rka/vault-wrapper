@@ -37,7 +37,10 @@
                 <label for="ttl">TTL (in seconds):</label>
                 <input type="number" id="ttl" value="60" min="1">
             </div>
-            <button onclick="wrapData()">Wrap</button>
+            <div class="button-container">
+                <button onclick="wrapData()">Wrap</button>
+                <div id="wrapSuccess" class="success-message">Data wrapped successfully!</div>
+            </div>
             <!-- Size Bar -->
             <div id="sizeBar" class="size-bar" data-size="0 B / 5 MB">
                 <div id="sizeBarInner" class="size-bar-inner"></div>
@@ -75,7 +78,10 @@
             <div class="unwrap-input-group">
                 <input type="text" id="unwrapInput" placeholder="Enter wrapped token">
             </div>
-            <button onclick="unwrapData()">Unwrap</button>
+            <div class="button-container">
+                <button onclick="unwrapData()">Unwrap</button>
+                <div id="unwrapSuccess" class="success-message">Data unwrapped successfully!</div>
+            </div>
             <!-- Error Message -->
             <div id="unwrapError" class="error-message" style="display: none;"></div>
             <!-- Success Message -->
