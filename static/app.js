@@ -334,6 +334,10 @@ async function unwrapData(token) {
         if (data.text) {
             resultEditor.setValue(data.text);
             resultEditor.getWrapperElement().style.display = 'block';
+            // Force CodeMirror to refresh and render properly
+            setTimeout(() => {
+                resultEditor.refresh();
+            }, 1);
             contentAdded = true;
         }
 

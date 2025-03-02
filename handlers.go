@@ -81,13 +81,13 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	dataMap, err := unwrapData(input.Token)
 	if err != nil {
 		log.Println("Error unwrapping data:", err)
-		
+
 		// Check for specific token errors
 		if strings.Contains(err.Error(), "unwrap token not found") {
 			http.Error(w, "Token has already been used or does not exist", http.StatusNotFound)
 			return
 		}
-		
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
