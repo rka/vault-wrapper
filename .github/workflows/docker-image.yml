@@ -39,9 +39,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          # Get the last commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
           git add version.txt
-          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
-          git tag "v${{ env.NEW_VERSION }}"
+          git commit -m "$COMMIT_MSG
+
+          Bump version to ${{ env.NEW_VERSION }}"
+          git tag -a "v${{ env.NEW_VERSION }}" -m "$COMMIT_MSG"
           git push
           git push --tags
 
