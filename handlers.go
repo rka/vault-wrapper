@@ -111,27 +111,26 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	// The data is stored under the "data" key
 	dataString, ok := dataMap["data"].(string)
 	if !ok {
-		log.Println("Error retrieving unwrapped data")
-		http.Error(w, "Error retrieving unwrapped data",
-			http.StatusInternalServerError)
+		log.Printf("Error retrieving unwrapped data, data map: %+v", dataMap)
+		http.Error(w, "Error retrieving unwrapped data", http.StatusInternalServerError)
 		return
 	}
 
 	var data interface{}
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
-		log.Println("Error unmarshalling data:", err)
+		log.Printf("Error unmarshalling data: %v, data string: %s", err, dataString)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Include wrapping token info in the response if available
 	response := map[string]interface{}{
-		"data": data,
+		"data": data.(map[string]interface{}), // Extract the actual data structure
 	}
 	if tokenInfo != nil {
 		response["wrapping_info"] = tokenInfo.Data
 	}
 
-	log.Println("Data unwrapped successfully")
+	log.Printf("Unwrapped data response: %+v", response)
 	json.NewEncoder(w).Encode(response)
 }

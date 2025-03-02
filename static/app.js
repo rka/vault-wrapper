@@ -306,50 +306,53 @@ async function unwrapData(token) {
         fileBubbleContainer.innerHTML = '';
 
         // Display token info if available
-        if (data.token_info) {
+        if (data.wrapping_info) {
             const tokenInfoDiv = document.createElement('div');
             tokenInfoDiv.className = 'token-info';
             tokenInfoDiv.innerHTML = `
                 <h3>Token Information</h3>
-                <pre>${JSON.stringify(data.token_info, null, 2)}</pre>
+                <pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>
             `;
             fileBubbleContainer.appendChild(tokenInfoDiv);
         }
 
-        if (data.files && Array.isArray(data.files)) {
-            data.files.forEach(file => {
-                const blob = base64ToBlob(file.data, file.type);
-                const url = URL.createObjectURL(blob);
+        // Handle unwrapped data
+        if (data.data) {
+            if (data.data.files && Array.isArray(data.data.files)) {
+                data.data.files.forEach(file => {
+                    const blob = base64ToBlob(file.data, file.type);
+                    const url = URL.createObjectURL(blob);
 
-                const fileBubble = document.createElement('div');
-                fileBubble.className = 'file-bubble';
-                const fileSizeFormatted = formatFileSize(file.size);
-                fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
-                fileBubble.title = 'Click to download';
+                    const fileBubble = document.createElement('div');
+                    fileBubble.className = 'file-bubble';
+                    const fileSizeFormatted = formatFileSize(file.size);
+                    fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
+                    fileBubble.title = 'Click to download';
 
-                fileBubble.addEventListener('click', () => {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = url;
-                    downloadLink.download = file.name;
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                    URL.revokeObjectURL(url);
+                    fileBubble.addEventListener('click', () => {
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = url;
+                        downloadLink.download = file.name;
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(url);
+                    });
+
+                    fileBubbleContainer.appendChild(fileBubble);
+                    contentAdded = true;
                 });
+            }
 
-                fileBubbleContainer.appendChild(fileBubble);
+            if (data.data.text) {
+                resultEditor.setValue(data.data.text);
+                resultEditor.getWrapperElement().style.display = 'block';
+                // Force CodeMirror to refresh and render properly
+                setTimeout(() => {
+                    resultEditor.refresh();
+                }, 1);
                 contentAdded = true;
-            });
-        }
-
-        if (data.text) {
-            resultEditor.setValue(data.text);
-            resultEditor.getWrapperElement().style.display = 'block';
-            // Force CodeMirror to refresh and render properly
-            setTimeout(() => {
-                resultEditor.refresh();
-            }, 1);
-            contentAdded = true;
+            }
         }
 
         if (!contentAdded) {
