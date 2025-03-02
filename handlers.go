@@ -78,20 +78,28 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// First lookup the token metadata
-	tokenInfo, err := lookupToken(input.Token)
+	// First try to lookup the wrapping token
+	tokenInfo, err := lookupWrappingToken(input.Token)
 	if err != nil {
-		log.Println("Error looking up token:", err)
+		log.Printf("Error looking up wrapping token: %v", err)
 		// Don't return error here, continue with unwrap attempt
 	}
 
+	// Try to unwrap the data
 	dataMap, err := unwrapData(input.Token)
 	if err != nil {
-		log.Println("Error unwrapping data:", err)
+		if tokenInfo != nil {
+			// Token exists but can't be unwrapped
+			log.Printf("Token exists but cannot be unwrapped: %v", err)
+			http.Error(w, fmt.Sprintf("Token details: Creation Time: %v, TTL: %v. Token has already been used or is invalid.",
+				tokenInfo.Data["creation_time"], tokenInfo.Data["ttl"]), http.StatusBadRequest)
+			return
+		}
 
-		// Check for specific token errors
-		if strings.Contains(err.Error(), "unwrap token not found") {
-			http.Error(w, "Token has already been used or does not exist", http.StatusNotFound)
+		// Handle other unwrap errors
+		log.Printf("Error unwrapping data: %v", err)
+		if strings.Contains(err.Error(), "wrapping token is not valid or does not exist") {
+			http.Error(w, "Token is not valid or does not exist", http.StatusNotFound)
 			return
 		}
 
@@ -115,12 +123,12 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Include token info in the response if available
+	// Include wrapping token info in the response if available
 	response := map[string]interface{}{
 		"data": data,
 	}
 	if tokenInfo != nil {
-		response["token_info"] = tokenInfo.Data
+		response["wrapping_info"] = tokenInfo.Data
 	}
 
 	log.Println("Data unwrapped successfully")

@@ -16,11 +16,11 @@ var (
 )
 
 func init() {
-	if vaultAddr == "" {
+	if (vaultAddr == "") {
 		vaultAddr = "http://vault:8200" // Default value if not set
 		log.Println("VAULT_ADDR not set, using default value: http://vault:8200")
 	}
-	if vaultToken == "" {
+	if (vaultToken == "") {
 		vaultToken = "root" // Default value if not set
 		log.Println("VAULT_TOKEN not set, using default value: root")
 	}
@@ -123,6 +123,43 @@ func lookupToken(token string) (*api.Secret, error) {
 	if err != nil {
 		log.Printf("lookupToken: Error looking up token: %v, Token: %s\n", err, token)
 		return nil, fmt.Errorf("lookupToken: failed to lookup token: %w", err)
+	}
+
+	return secret, nil
+}
+
+func lookupWrappingToken(token string) (*api.Secret, error) {
+	client, err := api.NewClient(&api.Config{Address: vaultAddr})
+	if err != nil {
+		log.Printf("lookupWrappingToken: Error creating Vault client: %v\n", err)
+		return nil, fmt.Errorf("lookupWrappingToken: failed to create Vault client: %w", err)
+	}
+
+	// For wrapping token lookup, we don't need to set the token
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create a logical request for wrapping token lookup
+	req := client.NewRequest("POST", "/v1/sys/wrapping/lookup")
+	if err := req.SetJSONBody(map[string]interface{}{
+		"token": token,
+	}); err != nil {
+		return nil, fmt.Errorf("lookupWrappingToken: failed to set request body: %w", err)
+	}
+
+	// Send the request
+	resp, err := client.RawRequestWithContext(ctx, req)
+	if err != nil {
+		log.Printf("lookupWrappingToken: Error looking up token: %v, Token: %s\n", err, token)
+		return nil, fmt.Errorf("lookupWrappingToken: failed to lookup token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Parse the response
+	secret, err := api.ParseSecret(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("lookupWrappingToken: failed to parse response: %w", err)
 	}
 
 	return secret, nil
