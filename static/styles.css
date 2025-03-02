@@ -423,3 +423,25 @@ body.night-mode .error-message {
     background-color: rgba(220, 53, 69, 0.1);
     border-color: #dc3545;
 }
+
+/* Token Info */
+.token-info {
+    background-color: var(--container-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.token-info h3 {
+    margin-top: 0;
+    color: var(--text-color);
+}
+
+.token-info pre {
+    background-color: var(--background-color);
+    padding: 10px;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    margin: 0;
+}

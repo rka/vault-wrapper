@@ -78,6 +78,13 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// First lookup the token metadata
+	tokenInfo, err := lookupToken(input.Token)
+	if err != nil {
+		log.Println("Error looking up token:", err)
+		// Don't return error here, continue with unwrap attempt
+	}
+
 	dataMap, err := unwrapData(input.Token)
 	if err != nil {
 		log.Println("Error unwrapping data:", err)
@@ -108,6 +115,14 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Include token info in the response if available
+	response := map[string]interface{}{
+		"data": data,
+	}
+	if tokenInfo != nil {
+		response["token_info"] = tokenInfo.Data
+	}
+
 	log.Println("Data unwrapped successfully")
-	json.NewEncoder(w).Encode(data)
+	json.NewEncoder(w).Encode(response)
 }

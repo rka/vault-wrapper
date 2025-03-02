@@ -305,6 +305,17 @@ async function unwrapData(token) {
         const fileBubbleContainer = document.getElementById('fileBubbleContainer');
         fileBubbleContainer.innerHTML = '';
 
+        // Display token info if available
+        if (data.token_info) {
+            const tokenInfoDiv = document.createElement('div');
+            tokenInfoDiv.className = 'token-info';
+            tokenInfoDiv.innerHTML = `
+                <h3>Token Information</h3>
+                <pre>${JSON.stringify(data.token_info, null, 2)}</pre>
+            `;
+            fileBubbleContainer.appendChild(tokenInfoDiv);
+        }
+
         if (data.files && Array.isArray(data.files)) {
             data.files.forEach(file => {
                 const blob = base64ToBlob(file.data, file.type);
