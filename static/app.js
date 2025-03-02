@@ -266,12 +266,13 @@ async function unwrapData(token) {
     unwrapButton.classList.add('loading');
     
     try {
+        const tokenToUnwrap = token || document.getElementById('unwrapInput').value;
         const response = await fetch('/unwrap', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ token: input })
+            body: JSON.stringify({ token: tokenToUnwrap }) // Fixed: using the correct token variable
         });
 
         if (!response.ok) {
