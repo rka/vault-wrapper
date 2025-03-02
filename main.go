@@ -9,9 +9,13 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
+// Version is set during build
+var Version = "dev"
+
 func init() {
 	// Set up log
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+	log.Printf("Starting Vault Data Wrapper v%s", Version)
 }
 
 func checkVaultConnectivity() error {
