@@ -253,10 +253,7 @@ async function wrapData() {
         document.querySelector('.token-warning').style.display = 'flex';
         
         detailsDiv.className = 'info-box';
-        detailsDiv.innerHTML = `
-            <h3>Wrap Details</h3>
-            <pre>${JSON.stringify(data.details, null, 2)}</pre>
-        `;
+        detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
         wrapSuccess.textContent = 'Data wrapped successfully!';
         wrapSuccess.style.display = 'block';
         setTimeout(() => {
@@ -315,14 +312,11 @@ async function unwrapData(token) {
         const fileBubbleContainer = document.getElementById('fileBubbleContainer');
         fileBubbleContainer.innerHTML = '';
 
-        // Display token info if available
+        // Display token info if available, without header
         if (data.wrapping_info) {
             const tokenInfoDiv = document.createElement('div');
             tokenInfoDiv.className = 'info-box';
-            tokenInfoDiv.innerHTML = `
-                <h3>Token Information</h3>
-                <pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>
-            `;
+            tokenInfoDiv.innerHTML = `<pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>`;
             fileBubbleContainer.appendChild(tokenInfoDiv);
         }
 
@@ -360,13 +354,7 @@ async function unwrapData(token) {
             }
 
             if (data.data.text) {
-                const textDiv = document.createElement('div');
-                textDiv.className = 'info-box';
-                textDiv.innerHTML = '<h3>Text Content</h3>';
-                fileBubbleContainer.appendChild(textDiv);
-                
                 resultEditor.setValue(data.data.text);
-                textDiv.appendChild(resultEditor.getWrapperElement());
                 resultEditor.getWrapperElement().style.display = 'block';
                 // Force CodeMirror to refresh and render properly
                 setTimeout(() => {
