@@ -327,7 +327,8 @@ async function unwrapData(token) {
             if (data.data.files && Array.isArray(data.data.files)) {
                 const filesDiv = document.createElement('div');
                 filesDiv.className = 'info-box';
-                filesDiv.innerHTML = '<h3>Files</h3>';
+                // Remove the title and line by removing this line:
+                // filesDiv.innerHTML = '<h3>Files</h3>';
                 fileBubbleContainer.appendChild(filesDiv);
                 
                 data.data.files.forEach(file => {

@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Vault Data Wrapper</title>
-    <!-- Google Fonts -->
+    <!-- External Resources -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="/static/styles.css">
-    <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="/static/lib/codemirror/codemirror-6.65.7.min.css">
-    <!-- CodeMirror Theme -->
     <link rel="stylesheet" href="/static/lib/codemirror/theme/dracula.min.css">
-    <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
@@ -25,13 +21,10 @@
 
         <div class="wrap-section">
             <h2>Wrap Data <span class="info-icon" title="You can wrap text or code by entering it below. To upload files, click the paperclip icon or drag and drop files.">ℹ️</span></h2>
-            <!-- Wrap Input with Drop Zone -->
             <div id="dropZone" class="drop-zone">
                 <div id="wrapInput" class="code-editor"></div>
-                <!-- Paperclip Icon for File Upload -->
                 <span id="fileUploadIcon" class="file-upload-icon" title="Click to upload files">📎</span>
             </div>
-            <!-- File Bubble Container for Wrap Section -->
             <div id="wrapFileBubbleContainer"></div>
             <div class="ttl-input">
                 <label for="ttl">TTL (in seconds):</label>
@@ -41,15 +34,11 @@
                 <button onclick="wrapData()">Wrap</button>
                 <div id="wrapSuccess" class="success-message">Data wrapped successfully!</div>
             </div>
-            <!-- Size Bar -->
             <div id="sizeBar" class="size-bar" data-size="0 B / 5 MB">
                 <div id="sizeBarInner" class="size-bar-inner"></div>
             </div>
-            <!-- Error Message -->
             <div id="wrapError" class="error-message" style="display: none;"></div>
-            <!-- Success Message -->
             <div id="wrapSuccess" class="success-message" style="display: none;">Data wrapped successfully!</div>
-            <!-- Display Wrapped Token and URL -->
             <div id="wrapResponseContainer" style="display: none;">
                 <div class="token-display">
                     <label for="wrappedToken">Wrapped Token:</label>
@@ -82,28 +71,19 @@
                 <button onclick="unwrapData()">Unwrap</button>
                 <div id="unwrapSuccess" class="success-message">Data unwrapped successfully!</div>
             </div>
-            <!-- Error Message -->
             <div id="unwrapError" class="error-message" style="display: none;"></div>
-            <!-- Success Message -->
             <div id="unwrapSuccess" class="success-message" style="display: none;">Data unwrapped successfully!</div>
-            <!-- Unwrap Result Container -->
             <div id="unwrapResultContainer">
-                <!-- CodeMirror Editor for Output -->
                 <div id="unwrapResult" class="code-editor"></div>
-                <!-- File Bubble Container -->
                 <div id="fileBubbleContainer"></div>
             </div>
         </div>
     </div>
 
-    <!-- CodeMirror JS -->
     <script src="/static/lib/codemirror/codemirror-6.65.7.min.js"></script>
-    <!-- CodeMirror Modes -->
     <script src="/static/lib/codemirror/mode/javascript/javascript.min.js"></script>
-    <!-- Custom Script -->
     <script src="/static/app.js"></script>
 
-    <!-- Copied Banner -->
     <div id="copiedBanner">Copied!</div>
 </body>
 </html>
