@@ -24,6 +24,7 @@ services:
     container_name: wrap
     hostname: wrap
     image: ghcr.io/rka/vault-wrapper/vault-data-wrapper:latest
+    pull_policy: always
     environment:
       - VAULT_ADDR=http://vault:8200 # Or your Vault address
       - VAULT_TOKEN=root # Or your Vault token

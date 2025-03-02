@@ -71,3 +71,9 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/vault-data-wrapper:latest
             ghcr.io/${{ github.repository }}/vault-data-wrapper:${{ env.NEW_VERSION || steps.version.outputs.version }}
+
+      - name: Trigger Portainer Webhook
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Use the new version tag when triggering the webhook
+          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}?tag=${{ env.NEW_VERSION || steps.version.outputs.version }}"
