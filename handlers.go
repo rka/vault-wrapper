@@ -90,7 +90,7 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	dataMap, err := unwrapData(input.Token)
 	if err != nil {
 		if tokenInfo != nil {
-			// Token exists but can't be unwrapped
+			// Token exists but can't be unwrapped - probably already used
 			log.Printf("Token exists but cannot be unwrapped: %v", err)
 			http.Error(w, fmt.Sprintf("Token details: Creation Time: %v, TTL: %v. Token has already been used or is invalid.",
 				tokenInfo.Data["creation_time"], tokenInfo.Data["ttl"]), http.StatusBadRequest)

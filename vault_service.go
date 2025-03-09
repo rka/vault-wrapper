@@ -16,11 +16,11 @@ var (
 )
 
 func init() {
-	if (vaultAddr == "") {
+	if vaultAddr == "" {
 		vaultAddr = "http://vault:8200" // Default value if not set
 		log.Println("VAULT_ADDR not set, using default value: http://vault:8200")
 	}
-	if (vaultToken == "") {
+	if vaultToken == "" {
 		vaultToken = "root" // Default value if not set
 		log.Println("VAULT_TOKEN not set, using default value: root")
 	}
@@ -103,29 +103,6 @@ func unwrapData(token string) (map[string]interface{}, error) {
 	}
 
 	return secret.Data, nil
-}
-
-func lookupToken(token string) (*api.Secret, error) {
-	client, err := api.NewClient(&api.Config{Address: vaultAddr})
-	if err != nil {
-		log.Printf("lookupToken: Error creating Vault client: %v\n", err)
-		return nil, fmt.Errorf("lookupToken: failed to create Vault client: %w", err)
-	}
-
-	client.SetToken(token)
-
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Lookup the token
-	secret, err := client.Auth().Token().LookupSelfWithContext(ctx)
-	if err != nil {
-		log.Printf("lookupToken: Error looking up token: %v, Token: %s\n", err, token)
-		return nil, fmt.Errorf("lookupToken: failed to lookup token: %w", err)
-	}
-
-	return secret, nil
 }
 
 func lookupWrappingToken(token string) (*api.Secret, error) {
