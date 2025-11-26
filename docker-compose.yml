@@ -15,6 +15,7 @@ services:
       - TZ=Etc/UTC
       - VAULT_DEFAULT_LEASE_TTL=168h
       - VAULT_MAX_LEASE_TTL=720h
+      - 'VAULT_LOCAL_CONFIG={"listener": [{"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1, "max_request_size": 5242880}}]}'
     networks:
       - saltbox
     labels:
@@ -31,6 +32,7 @@ services:
       - VAULT_ADDR=http://vault:8200 # Or your Vault address
       - VAULT_TOKEN=root # Or your Vault token
       - GITHUB_URL=https://github.com/rka/vault-wrapper
+      - MAX_REQUEST_SIZE=5242880 # 5MB
     labels:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true

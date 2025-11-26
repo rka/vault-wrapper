@@ -20,7 +20,7 @@ const dropZone = document.getElementById('dropZone');
 const fileUploadIcon = document.getElementById('fileUploadIcon');
 const wrapSuccess = document.getElementById('wrapSuccess');
 const unwrapSuccess = document.getElementById('unwrapSuccess');
-const maxSize = 5 * 1024 * 1024;
+let maxSize = 5 * 1024 * 1024; // Default 5MB, will be updated from API
 let uploadedFiles = [];
 
 // Handle drag over
@@ -91,13 +91,13 @@ function handleFileUpload(files) {
     const currentSize = uploadedFiles.reduce((sum, file) => sum + file.size, 0);
     
     if (totalSize + currentSize > maxSize) {
-        alert(`Adding these files would exceed the 5 MB limit.`);
+        alert(`Adding these files would exceed the ${formatFileSize(maxSize)} limit.`);
         return;
     }
 
     for (const file of files) {
         if (file.size > maxSize) {
-            alert(`File "${file.name}" exceeds 5 MB limit and will not be added.`);
+            alert(`File "${file.name}" exceeds ${formatFileSize(maxSize)} limit and will not be added.`);
             continue;
         }
 
@@ -199,7 +199,7 @@ async function wrapData() {
     const totalSize = textSize + filesSize;
 
     if (totalSize > maxSize) {
-        errorDiv.textContent = 'Total size exceeds the maximum allowed size of 5 MB.';
+        errorDiv.textContent = `Total size exceeds the maximum allowed size of ${formatFileSize(maxSize)}.`;
         errorDiv.style.display = 'block';
         wrapButton.classList.remove('loading');
         return;
@@ -472,6 +472,10 @@ window.addEventListener('DOMContentLoaded', () => {
             if (data.github_url) {
                 document.getElementById('githubLink').href = data.github_url;
                 document.getElementById('githubSection').style.display = 'inline';
+            }
+            if (data.max_request_size) {
+                maxSize = data.max_request_size;
+                updateSizeBar(); // Update size bar with new max size
             }
         })
         .catch(err => console.error('Failed to fetch version:', err));

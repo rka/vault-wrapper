@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 // Version is set during build
 var Version = "dev"
 var GithubURL = ""
+var MaxRequestSize int64 = 5 * 1024 * 1024 // Default 5MB
 
 func init() {
 	// Set up log
@@ -21,6 +23,14 @@ func init() {
 
 	if url := os.Getenv("GITHUB_URL"); url != "" {
 		GithubURL = url
+	}
+
+	if sizeStr := os.Getenv("MAX_REQUEST_SIZE"); sizeStr != "" {
+		if size, err := strconv.ParseInt(sizeStr, 10, 64); err == nil {
+			MaxRequestSize = size
+		} else {
+			log.Printf("Invalid MAX_REQUEST_SIZE: %v, using default: %d", err, MaxRequestSize)
+		}
 	}
 
 	// Read version from file if available
