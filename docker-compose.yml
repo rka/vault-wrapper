@@ -15,7 +15,7 @@ services:
       - TZ=Etc/UTC
       - VAULT_DEFAULT_LEASE_TTL=168h
       - VAULT_MAX_LEASE_TTL=720h
-      - 'VAULT_LOCAL_CONFIG={"listener": [{"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1, "max_request_size": 52428800}}]}'
+      - 'VAULT_LOCAL_CONFIG={"listener": [{"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1, "max_request_size": 52428800, "max_json_string_value_length": 52428800}}]}'
     networks:
       - saltbox
     labels:
