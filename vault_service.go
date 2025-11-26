@@ -57,7 +57,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	req := client.NewRequest("POST", "/v1/sys/wrapping/wrap")
 
 	// Set the Wrap-TTL header
-	req.Headers.Set("X-Vault-Wrap-TTL", ttlString)
+	req.WrapTTL = ttlString
 
 	// Set the request body
 	if err := req.SetJSONBody(requestData); err != nil {

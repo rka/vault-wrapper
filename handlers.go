@@ -47,7 +47,19 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get client IP
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+	}
+	if strings.Contains(clientIP, ",") {
+		clientIP = strings.Split(clientIP, ",")[0]
+	}
+
 	dataString := string(dataBytes)
+	log.Printf("Wrapping data. Size: %d bytes, TTL: %s, IP: %s, User-Agent: %s",
+		len(dataString), input.TTL, clientIP, r.UserAgent())
+
 	token, details, err := wrapData(dataString, input.TTL)
 	if err != nil {
 		log.Println("Error wrapping data:", err)
@@ -131,7 +143,23 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		response["wrapping_info"] = tokenInfo.Data
 	}
 
-	log.Printf("Unwrapped data response: %+v", response)
+	// Get client IP
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+	}
+	if strings.Contains(clientIP, ",") {
+		clientIP = strings.Split(clientIP, ",")[0]
+	}
+
+	// Mask token for logging
+	maskedToken := "short-token"
+	if len(input.Token) > 12 {
+		maskedToken = input.Token[:4] + "..." + input.Token[len(input.Token)-4:]
+	}
+
+	log.Printf("Data unwrapped successfully. Token: %s, IP: %s, User-Agent: %s",
+		maskedToken, clientIP, r.UserAgent())
 	json.NewEncoder(w).Encode(response)
 }
 
