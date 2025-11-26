@@ -134,3 +134,11 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Unwrapped data response: %+v", response)
 	json.NewEncoder(w).Encode(response)
 }
+
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"version":    Version,
+		"github_url": GithubURL,
+	})
+}

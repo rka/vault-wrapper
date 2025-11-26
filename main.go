@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/vault/api"
@@ -11,10 +13,22 @@ import (
 
 // Version is set during build
 var Version = "dev"
+var GithubURL = ""
 
 func init() {
 	// Set up log
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+
+	if url := os.Getenv("GITHUB_URL"); url != "" {
+		GithubURL = url
+	}
+
+	// Read version from file if available
+	data, err := os.ReadFile("version.txt")
+	if err == nil {
+		Version = strings.TrimSpace(string(data))
+	}
+
 	log.Printf("Starting Vault Data Wrapper v%s", Version)
 }
 
@@ -59,6 +73,7 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/wrap", wrapHandler)
 	http.HandleFunc("/unwrap", unwrapHandler)
+	http.HandleFunc("/api/version", versionHandler)
 
 	// Serve static files
 	fs := http.FileServer(http.Dir("./static"))

@@ -28,6 +28,7 @@ services:
     environment:
       - VAULT_ADDR=http://vault:8200 # Or your Vault address
       - VAULT_TOKEN=root # Or your Vault token
+      - GITHUB_URL=https://github.com/rka/vault-wrapper
     labels:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true

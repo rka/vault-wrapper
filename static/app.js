@@ -463,4 +463,16 @@ window.onload = function() {
 window.addEventListener('DOMContentLoaded', () => {
     // Hide token warning initially
     document.querySelector('.token-warning').style.display = 'none';
+
+    // Fetch and display version
+    fetch('/api/version')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('appVersion').textContent = `v${data.version}`;
+            if (data.github_url) {
+                document.getElementById('githubLink').href = data.github_url;
+                document.getElementById('githubSection').style.display = 'inline';
+            }
+        })
+        .catch(err => console.error('Failed to fetch version:', err));
 });
