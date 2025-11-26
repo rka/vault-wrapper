@@ -32,11 +32,11 @@ services:
       com.github.saltbox.saltbox_managed: true
       traefik.enable: true
       traefik.http.routers.wrap-http.entrypoints: web
-      traefik.http.routers.wrap-http.middlewares: globalHeaders@file,redirect-to-https@docker,robotHeaders@file,authentik@docker
+      traefik.http.routers.wrap-http.middlewares: globalHeaders@file,redirect-to-https@docker,robotHeaders@file,crowdsec@docker
       traefik.http.routers.wrap-http.rule: Host(`wrap.rkaa.tech`)
       traefik.http.routers.wrap-http.service: wrap
       traefik.http.routers.wrap.entrypoints: websecure
-      traefik.http.routers.wrap.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file,authentik@docker
+      traefik.http.routers.wrap.middlewares: globalHeaders@file,secureHeaders@file,robotHeaders@file,crowdsec@docker
       traefik.http.routers.wrap.rule: Host(`wrap.rkaa.tech`)
       traefik.http.routers.wrap.service: wrap
       traefik.http.routers.wrap.tls.certresolver: httpresolver
