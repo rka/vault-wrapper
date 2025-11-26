@@ -152,6 +152,27 @@ function formatFileSize(bytes) {
     return `${size.toFixed(2)} ${sizes[i]}`;
 }
 
+// Format duration in seconds to human readable string
+function formatDuration(seconds) {
+    const units = [
+        { unit: 'year', seconds: 31536000 },
+        { unit: 'month', seconds: 2592000 },
+        { unit: 'week', seconds: 604800 },
+        { unit: 'day', seconds: 86400 },
+        { unit: 'hour', seconds: 3600 },
+        { unit: 'minute', seconds: 60 },
+        { unit: 'second', seconds: 1 }
+    ];
+
+    for (const { unit, seconds: unitSeconds } of units) {
+        if (seconds >= unitSeconds) {
+            const value = Math.floor(seconds / unitSeconds);
+            return `${value} ${unit}${value > 1 ? 's' : ''}`;
+        }
+    }
+    return '0 seconds';
+}
+
 // Get text size in bytes
 function getTextSizeInBytes(text) {
     return new TextEncoder().encode(text).length;
@@ -253,7 +274,18 @@ async function wrapData() {
         document.querySelector('.token-warning').style.display = 'flex';
         
         detailsDiv.className = 'info-box';
-        detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
+        
+        const creationTime = new Date(data.details.creation_time);
+        const ttlSeconds = data.details.ttl;
+        const expirationTime = new Date(creationTime.getTime() + ttlSeconds * 1000);
+
+        detailsDiv.innerHTML = `
+            <h3>Token Details</h3>
+            <div class="detail-row"><strong>Created:</strong> <span>${creationTime.toLocaleString()}</span></div>
+            <div class="detail-row"><strong>Valid Until:</strong> <span>${expirationTime.toLocaleString()}</span></div>
+            <div class="detail-row"><strong>Duration:</strong> <span>${formatDuration(ttlSeconds)}</span></div>
+        `;
+
         wrapSuccess.textContent = 'Data wrapped successfully!';
         wrapSuccess.style.display = 'block';
         setTimeout(() => {

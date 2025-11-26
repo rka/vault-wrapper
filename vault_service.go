@@ -36,12 +36,13 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	client.SetToken(vaultToken)
 
 	// Convert TTL to time.Duration
-	ttlDuration, err := time.ParseDuration(ttl + "s")
+	_, err = time.ParseDuration(ttl + "s")
 	if err != nil {
 		log.Printf("wrapData: Invalid TTL: %v, TTL: %s\n", err, ttl)
 		return "", nil, fmt.Errorf("wrapData: invalid TTL: %w, TTL: %s", err, ttl)
 	}
-	ttlString := ttlDuration.String()
+	// Use the input TTL directly with 's' suffix to ensure it's treated as seconds
+	ttlString := ttl + "s"
 
 	// Prepare the data to wrap
 	requestData := map[string]interface{}{
