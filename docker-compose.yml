@@ -13,6 +13,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
+      - VAULT_DEFAULT_LEASE_TTL=168h
+      - VAULT_MAX_LEASE_TTL=720h
     networks:
       - saltbox
     labels:

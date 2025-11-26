@@ -153,30 +153,6 @@ button:hover {
 /* Info Box - Simplified style */
 .info-box {
     margin: 15px 0;
-    padding: 15px;
-    background-color: var(--container-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.detail-row:last-child {
-    border-bottom: none;
-}
-
-.detail-row strong {
-    color: var(--text-color);
-}
-
-.detail-row span {
-    color: var(--secondary-color);
-    font-family: monospace;
 }
 
 .info-box pre {
