@@ -51,6 +51,59 @@ h1, h2 {
     font-weight: 600;
 }
 
+/* Tabs */
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: var(--container-background);
+    padding: 5px;
+    border-radius: 50px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 25px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--secondary-color);
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    margin: 0; /* Override default button margin */
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.tab-btn.active {
+    background-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Section Wrappers */
 .wrap-section, .unwrap-section {
     margin-bottom: 40px;

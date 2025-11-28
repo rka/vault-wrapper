@@ -448,6 +448,10 @@ window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     if (token) {
+        // Switch to unwrap tab
+        const unwrapTabBtn = document.querySelector('[data-tab="unwrap"]');
+        if (unwrapTabBtn) unwrapTabBtn.click();
+        
         document.getElementById('unwrapInput').value = token;
         unwrapData(token);
     }
@@ -479,4 +483,27 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch(err => console.error('Failed to fetch version:', err));
+
+    // Tab switching logic
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked button
+            button.classList.add('active');
+
+            // Show corresponding content
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+
+            // Refresh CodeMirror instances
+            if (tabId === 'wrap') {
+                setTimeout(() => wrapEditor.refresh(), 10);
+            } else if (tabId === 'unwrap') {
+                setTimeout(() => unwrapResultEditor.refresh(), 10);
+            }
+        });
+    });
 });

@@ -19,9 +19,15 @@
             <span id="darkModeToggle" class="theme-icon" onclick="toggleNightMode()"></span>
         </div>
 
-        <div class="wrap-section">
-            <h2>Wrap Data <span class="info-icon" title="You can wrap text or code by entering it below. To upload files, click the paperclip icon or drag and drop files.">ℹ️</span></h2>
-            <div id="dropZone" class="drop-zone">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="wrap">Wrap Data</button>
+            <button class="tab-btn" data-tab="unwrap">Unwrap Data</button>
+        </div>
+
+        <div id="wrap" class="tab-content active">
+            <div class="wrap-section">
+                <h2>Wrap Data <span class="info-icon" title="You can wrap text or code by entering it below. To upload files, click the paperclip icon or drag and drop files.">ℹ️</span></h2>
+                <div id="dropZone" class="drop-zone">
                 <div id="wrapInput" class="code-editor"></div>
                 <span id="fileUploadIcon" class="file-upload-icon" title="Click to upload files">📎</span>
             </div>
@@ -60,7 +66,9 @@
                 <div id="wrapDetails" class="details-box"></div>
             </div>
         </div>
+        </div>
 
+        <div id="unwrap" class="tab-content">
         <div class="unwrap-section">
             <h2>Unwrap Data <span class="info-icon" title="Enter a wrapped token to unwrap and retrieve the original data or files.">ℹ️</span></h2>
             <div class="unwrap-input-group">
@@ -75,6 +83,7 @@
                 <div id="unwrapResult" class="code-editor"></div>
                 <div id="fileBubbleContainer"></div>
             </div>
+        </div>
         </div>
 
         <div class="footer">
