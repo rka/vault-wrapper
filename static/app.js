@@ -415,12 +415,15 @@ function showCopiedBanner() {
 function toggleNightMode() {
     document.body.classList.toggle('night-mode');
     document.body.classList.toggle('light-mode');
-    // Keep using dracula theme for both modes
-    wrapEditor.setOption('theme', 'dracula');
-    unwrapResultEditor.setOption('theme', 'dracula');
+    
+    const isDark = document.body.classList.contains('night-mode');
+    const theme = isDark ? 'dracula' : 'solarized light';
+    
+    wrapEditor.setOption('theme', theme);
+    unwrapResultEditor.setOption('theme', theme);
 
     // Save preference in cookie
-    const mode = document.body.classList.contains('night-mode') ? 'dark' : 'light';
+    const mode = isDark ? 'dark' : 'light';
     document.cookie = `theme=${mode};path=/;max-age=31536000`;
 }
 
@@ -439,10 +442,11 @@ window.onload = function() {
         wrapEditor.setOption('theme', 'dracula');
         unwrapResultEditor.setOption('theme', 'dracula');
     } else {
+        // Default to light mode
         document.body.classList.add('light-mode');
         document.body.classList.remove('night-mode');
-        wrapEditor.setOption('theme', 'dracula');
-        unwrapResultEditor.setOption('theme', 'dracula');
+        wrapEditor.setOption('theme', 'solarized light');
+        unwrapResultEditor.setOption('theme', 'solarized light');
     }
 
     const urlParams = new URLSearchParams(window.location.search);

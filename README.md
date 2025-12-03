@@ -52,9 +52,43 @@ Vault Data Wrapper is a web application that leverages HashiCorp Vault's wrappin
 1.  **Wrap Data:** Enter text/code or upload files, set TTL, and click "Wrap". Copy the generated token or shareable link.
 2.  **Unwrap Data:** Open the shareable link or paste the token into the "Unwrap" field and click "Unwrap".
 
+## CLI Usage
+
+You can interact with the API directly using command-line tools.
+
+### curl (Linux, macOS, Windows Git Bash)
+
+**Wrap Data:**
+```bash
+curl -X POST http://localhost:3001/wrap \
+  -H "Content-Type: application/json" \
+  -d '{"data": {"text": "My Secret"}, "ttl": "3600"}'
+```
+
+**Unwrap Data:**
+```bash
+curl -X POST http://localhost:3001/unwrap \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_TOKEN"}'
+```
+
+### PowerShell (Windows)
+
+**Wrap Data:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/wrap" -Method Post -ContentType "application/json" -Body (@{data=@{text="My Secret"}; ttl="3600"} | ConvertTo-Json) | ConvertTo-Json
+```
+
+**Unwrap Data:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/unwrap" -Method Post -ContentType "application/json" -Body (@{token="YOUR_TOKEN"} | ConvertTo-Json) | ConvertTo-Json
+```
+
 ## Screenshots
 
-![alt text](image.png)
+ ![Dark Mode](image-1.png)
+
+ ![Light Mode](image-2.png)
 
 ## Built With
 
