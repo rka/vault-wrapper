@@ -20,7 +20,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.Version=${VERSION}" -o main .
 
 # Final stage
-FROM alpine:3.18
+FROM alpine:3.23
 
 # Add version label
 ARG VERSION=unknown
