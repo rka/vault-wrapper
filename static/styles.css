@@ -204,60 +204,91 @@ body.night-mode .icon-sun  { display: block; }
     flex: 1;
 }
 
-/* ── Tabs ── */
+/* ── Sections grid (two-column single-page layout) ── */
+.sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.panel {
+    min-width: 0; /* prevent grid blowout on long content */
+}
+
+/* ── Tabs (kept for reference, not rendered) ── */
 .tabs {
     display: flex;
-    gap: 4px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-xl);
-    padding: 4px;
-    width: fit-content;
-    margin: 0 auto 28px;
-    box-shadow: var(--shadow-sm);
-    transition: background var(--ease-md), border-color var(--ease-md);
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    transition: border-color var(--ease-md);
 }
 
 .tab-btn {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 8px 20px;
+    padding: 10px 22px 11px;
     border: none;
-    border-radius: var(--r-xl);
+    border-radius: 0;
     background: transparent;
     color: var(--text-muted);
     font-family: inherit;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--ease);
+    transition: color var(--ease);
     white-space: nowrap;
+    position: relative;
 }
 
 .tab-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
 }
 
+/* Sliding underline indicator */
+.tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+    border-radius: var(--r-full);
+    transform: scaleX(0);
+    transition: transform 0.22s ease;
+}
+
 .tab-btn:hover {
-    color: var(--primary);
-    background: var(--primary-dim);
+    color: var(--text);
+    background: transparent;
 }
 
 .tab-btn.active {
-    background: var(--primary);
-    color: var(--text-on-primary);
-    box-shadow: 0 2px 8px var(--primary-shadow);
+    color: var(--primary);
+    font-weight: 600;
+    background: transparent;
+    box-shadow: none;
+}
+
+.tab-btn.active::after {
+    transform: scaleX(1);
 }
 
 .tab-btn.active:hover {
-    background: var(--primary-hover);
-    color: var(--text-on-primary);
+    color: var(--primary);
+    background: transparent;
 }
 
-/* ── Tab content ── */
+.tab-btn:first-child {
+    padding-left: 0;
+}
+
+/* Tab content */
 .tab-content {
     display: none;
     animation: fadeSlideIn var(--ease-md) forwards;
@@ -1085,8 +1116,10 @@ body.night-mode .CodeMirror {
 
     .brand-subtitle { display: none; }
 
-    .tabs { border-radius: var(--r-lg); }
-    .tab-btn { padding: 8px 14px; font-size: 0.85rem; }
+    .sections-grid { grid-template-columns: 1fr; gap: 16px; }
+
+    .tab-btn { padding: 9px 16px 10px; font-size: 0.85rem; }
+    .tab-btn:first-child { padding-left: 0; }
 
     .wrap-section,
     .unwrap-section { padding: 18px 16px; }

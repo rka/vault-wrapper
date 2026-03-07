@@ -466,7 +466,7 @@ window.onload = function() {
         // Switch to unwrap tab
         const unwrapTabBtn = document.querySelector('[data-tab="unwrap"]');
         if (unwrapTabBtn) unwrapTabBtn.click();
-        
+
         document.getElementById('unwrapInput').value = token;
         unwrapData(token);
     }
