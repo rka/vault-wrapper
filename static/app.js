@@ -186,7 +186,7 @@ function updateSizeBar() {
 wrapEditor.on('change', updateSizeBar);
 
 async function wrapData() {
-    const wrapButton = document.querySelector('.wrap-section button');
+    const wrapButton = document.getElementById('wrapBtn');
     const errorDiv = document.getElementById('wrapError');
     wrapButton.classList.add('loading');
     
@@ -254,8 +254,7 @@ async function wrapData() {
         
         detailsDiv.className = 'info-box';
         detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
-        wrapSuccess.textContent = 'Data wrapped successfully!';
-        wrapSuccess.style.display = 'block';
+        wrapSuccess.style.display = 'inline-flex';
         setTimeout(() => {
             wrapSuccess.style.display = 'none';
         }, 3000);
@@ -276,7 +275,7 @@ async function wrapData() {
 }
 
 async function unwrapData(token) {
-    const unwrapButton = document.querySelector('.unwrap-section button');
+    const unwrapButton = document.getElementById('unwrapBtn');
     const resultEditor = unwrapResultEditor;
     const errorDiv = document.getElementById('unwrapError');
     unwrapButton.classList.add('loading');
@@ -369,8 +368,7 @@ async function unwrapData(token) {
             errorDiv.textContent = 'No data found in the unwrapped content.';
             errorDiv.style.display = 'block';
         } else {
-            unwrapSuccess.textContent = 'Data unwrapped successfully!';
-            unwrapSuccess.style.display = 'block';
+            unwrapSuccess.style.display = 'inline-flex';
             setTimeout(() => {
                 unwrapSuccess.style.display = 'none';
             }, 3000);
@@ -425,6 +423,19 @@ function toggleNightMode() {
     // Save preference in cookie
     const mode = isDark ? 'dark' : 'light';
     document.cookie = `theme=${mode};path=/;max-age=31536000`;
+}
+
+function setTTL(seconds) {
+    document.getElementById('ttl').value = seconds;
+}
+
+async function pasteToken() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('unwrapInput').value = text.trim();
+    } catch (err) {
+        console.error('Failed to read clipboard:', err);
+    }
 }
 
 // On page load, check if a token is in the URL and unwrap it
