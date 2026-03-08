@@ -29,7 +29,15 @@
                     <span class="brand-subtitle">Secure one-time secret sharing</span>
                 </div>
             </div>
-            <button id="darkModeToggle" class="theme-toggle" onclick="toggleNightMode()" aria-label="Toggle theme" title="Toggle theme" type="button">
+            <div class="header-right">
+                <!-- Vault backend status indicator -->
+                <div class="vault-status" id="vaultStatus">
+                    <span class="vault-status-dot" id="vaultStatusDot" aria-hidden="true"></span>
+                    <span class="vault-status-label">Vault</span>
+                    <div class="vault-status-panel" id="vaultStatusPanel" role="tooltip" aria-hidden="true"></div>
+                </div>
+
+                <button id="darkModeToggle" class="theme-toggle" onclick="toggleNightMode()" aria-label="Toggle theme" data-tooltip="Toggle theme" type="button">
                 <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
@@ -41,6 +49,7 @@
                     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
             </button>
+            </div><!-- /.header-right -->
         </header>
 
         <!-- ── Main ── -->
@@ -63,7 +72,7 @@
                 <div class="wrap-section">
                     <div class="section-header">
                         <h2>Wrap Data</h2>
-                        <span class="info-badge" title="Enter text or code, or drag and drop files. The data will be encrypted in Vault and you'll receive a one-time token.">
+                        <span class="info-badge" data-tooltip="Enter text or code, or drag and drop files. The data will be encrypted in Vault and you'll receive a one-time token.">
                             <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
                         </span>
                     </div>
@@ -71,7 +80,7 @@
                     <!-- Editor + Drop Zone -->
                     <div id="dropZone" class="drop-zone">
                         <div id="wrapInput" class="code-editor"></div>
-                        <button id="fileUploadIcon" class="file-attach-btn" title="Attach files" type="button" aria-label="Attach files">
+                        <button id="fileUploadIcon" class="file-attach-btn" data-tooltip="Attach files" type="button" aria-label="Attach files">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
@@ -135,7 +144,7 @@
                             <label class="field-label" for="wrappedToken">Wrapped Token</label>
                             <div class="copy-input-wrap">
                                 <input type="text" id="wrappedToken" readonly onclick="copyToClipboard('wrappedToken')" placeholder="Token will appear here" aria-label="Wrapped token" spellcheck="false">
-                                <button class="copy-btn" onclick="copyToClipboard('wrappedToken')" title="Copy token" type="button" aria-label="Copy token">
+                                <button class="copy-btn" onclick="copyToClipboard('wrappedToken')" data-tooltip="Copy token" type="button" aria-label="Copy token">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                 </button>
                             </div>
@@ -145,7 +154,7 @@
                             <label class="field-label" for="wrappedLink">Shareable Link</label>
                             <div class="copy-input-wrap">
                                 <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Link will appear here" aria-label="Shareable link" spellcheck="false">
-                                <button class="copy-btn" onclick="copyToClipboard('wrappedLink')" title="Copy link" type="button" aria-label="Copy shareable link">
+                                <button class="copy-btn" onclick="copyToClipboard('wrappedLink')" data-tooltip="Copy link" type="button" aria-label="Copy shareable link">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                                 </button>
                             </div>
@@ -168,7 +177,7 @@
                 <div class="unwrap-section">
                     <div class="section-header">
                         <h2>Unwrap Data</h2>
-                        <span class="info-badge" title="Enter a wrapped token to retrieve its contents. The token is consumed on first use and cannot be reused.">
+                        <span class="info-badge" data-tooltip="Enter a wrapped token to retrieve its contents. The token is consumed on first use and cannot be reused.">
                             <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
                         </span>
                     </div>
@@ -177,7 +186,7 @@
                         <label class="field-label" for="unwrapInput">Wrapped Token</label>
                         <div class="token-input-wrap">
                             <input type="text" id="unwrapInput" placeholder="hvs.CAESIB…" autocomplete="off" spellcheck="false" aria-label="Wrapped token to unwrap">
-                            <button class="paste-btn" onclick="pasteToken()" title="Paste from clipboard" type="button" aria-label="Paste token from clipboard">
+                            <button class="paste-btn" onclick="pasteToken()" data-tooltip="Paste from clipboard" type="button" aria-label="Paste token from clipboard">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                             </button>
                         </div>

@@ -1108,6 +1108,157 @@ body.night-mode .CodeMirror {
     background: var(--text-muted);
 }
 
+/* ── Header right group ── */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Vault status widget ── */
+.vault-status {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: default;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--ease), background var(--ease), color var(--ease);
+    user-select: none;
+}
+
+.vault-status:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+}
+
+.vault-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background var(--ease), box-shadow var(--ease);
+}
+
+.vault-status-dot.healthy {
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success-bg);
+    animation: status-pulse 2.8s ease-in-out infinite;
+}
+
+.vault-status-dot.standby {
+    background: var(--warning);
+    box-shadow: 0 0 0 2px var(--warning-bg);
+}
+
+.vault-status-dot.unhealthy {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger-bg);
+}
+
+@keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+
+/* Vault status hover panel */
+.vault-status-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 210px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    padding: 12px 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition: opacity var(--ease), transform var(--ease);
+    z-index: 200;
+}
+
+.vault-status:hover .vault-status-panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.vault-status-panel-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.vault-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 3px 0;
+    white-space: nowrap;
+}
+
+.vault-status-key {
+    font-size: 0.77rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.vault-status-val {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.vault-status-val.ok   { color: var(--success); }
+.vault-status-val.warn { color: var(--warning); }
+.vault-status-val.err  { color: var(--danger); }
+
+/* ── Floating tooltip ── */
+.floating-tooltip {
+    position: fixed;
+    z-index: 9998;
+    background: var(--text);
+    color: var(--bg);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.5;
+    padding: 5px 10px;
+    border-radius: var(--r-sm);
+    max-width: 240px;
+    white-space: normal;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity 0.14s ease;
+    will-change: opacity;
+}
+
+.floating-tooltip.visible {
+    opacity: 1;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
     :root { --gutter: 14px; }

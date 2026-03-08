@@ -1,8 +1,18 @@
+// Determine the preferred theme at page load time (before any DOM events).
+function getInitialTheme() {
+    const cookies = document.cookie.split(';').reduce((acc, c) => {
+        const [k, v] = c.trim().split('=');
+        acc[k] = v;
+        return acc;
+    }, {});
+    return cookies.theme === 'dark' ? 'dracula' : 'default';
+}
+
 // Initialize CodeMirror editors with drop prevention
 let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
     lineNumbers: true,
     mode: 'javascript',
-    theme: 'dracula',
+    theme: getInitialTheme(),
     lineWrapping: true,
     dragDrop: false
 });
@@ -10,7 +20,7 @@ let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
 let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
     lineNumbers: true,
     mode: 'javascript',
-    theme: 'dracula',
+    theme: getInitialTheme(),
     readOnly: true,
     lineWrapping: true
 });
@@ -236,7 +246,8 @@ async function wrapData() {
         });
 
         if (!response.ok) {
-            throw new Error('Wrap request failed');
+            const errorText = await response.text();
+            throw new Error(errorText || 'Wrap request failed');
         }
 
         const data = await response.json();
@@ -415,7 +426,7 @@ function toggleNightMode() {
     document.body.classList.toggle('light-mode');
     
     const isDark = document.body.classList.contains('night-mode');
-    const theme = isDark ? 'dracula' : 'solarized light';
+    const theme = isDark ? 'dracula' : 'default';
     
     wrapEditor.setOption('theme', theme);
     unwrapResultEditor.setOption('theme', theme);
@@ -456,8 +467,8 @@ window.onload = function() {
         // Default to light mode
         document.body.classList.add('light-mode');
         document.body.classList.remove('night-mode');
-        wrapEditor.setOption('theme', 'solarized light');
-        unwrapResultEditor.setOption('theme', 'solarized light');
+        wrapEditor.setOption('theme', 'default');
+        unwrapResultEditor.setOption('theme', 'default');
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -477,6 +488,92 @@ window.onload = function() {
     // Hide response container initially
     document.getElementById('wrapResponseContainer').style.display = 'none';
 };
+
+// ── Vault health ────────────────────────────────────────────────────────────
+
+async function fetchVaultHealth() {
+    const dot   = document.getElementById('vaultStatusDot');
+    const panel = document.getElementById('vaultStatusPanel');
+    if (!dot || !panel) return;
+
+    try {
+        const res  = await fetch('/api/health');
+        const data = await res.json();
+
+        dot.className = 'vault-status-dot ' + (data.status || 'unhealthy');
+
+        const rows = [
+            ['Status',      formatHealthStatus(data.status), healthValClass(data.status)],
+            ['Initialized', data.initialized ? 'Yes' : 'No', data.initialized ? 'ok'   : 'err'],
+            ['Sealed',      data.sealed      ? 'Yes' : 'No', data.sealed      ? 'err'  : 'ok'],
+            ['Standby',     data.standby     ? 'Yes' : 'No', data.standby     ? 'warn' : 'ok'],
+        ];
+        if (data.vault_version) rows.push(['Version', data.vault_version,  '']);
+        if (data.cluster_name)  rows.push(['Cluster', data.cluster_name,   '']);
+        if (data.message)       rows.push(['Info',    data.message,        'warn']);
+
+        panel.innerHTML =
+            `<div class="vault-status-panel-title">Vault Backend</div>` +
+            rows.map(([k, v, cls]) =>
+                `<div class="vault-status-row">` +
+                `<span class="vault-status-key">${k}</span>` +
+                `<span class="vault-status-val${cls ? ' ' + cls : ''}">${v}</span>` +
+                `</div>`
+            ).join('');
+    } catch (_) {
+        dot.className = 'vault-status-dot unhealthy';
+        panel.innerHTML =
+            `<div class="vault-status-panel-title">Vault Backend</div>` +
+            `<div class="vault-status-row">` +
+            `<span class="vault-status-key">Status</span>` +
+            `<span class="vault-status-val err">Unreachable</span>` +
+            `</div>`;
+    }
+}
+
+function formatHealthStatus(s) {
+    return { healthy: 'Healthy', standby: 'Standby', unhealthy: 'Unhealthy' }[s] || (s || 'Unknown');
+}
+
+function healthValClass(s) {
+    return { healthy: 'ok', standby: 'warn', unhealthy: 'err' }[s] || 'err';
+}
+
+// ── Floating tooltips ────────────────────────────────────────────────────────
+
+function initTooltips() {
+    const tip = document.createElement('div');
+    tip.className = 'floating-tooltip';
+    document.body.appendChild(tip);
+
+    document.addEventListener('mouseenter', function(e) {
+        const target = e.target && e.target.closest && e.target.closest('[data-tooltip]');
+        if (!target) return;
+        const text = target.getAttribute('data-tooltip');
+        if (!text) return;
+
+        tip.textContent = text;
+        tip.classList.add('visible');
+
+        const r = target.getBoundingClientRect();
+        // Position below the element; nudge left/right to stay in viewport
+        let top  = r.bottom + 8;
+        let left = r.left + r.width / 2;
+        // Clamp horizontally (approximate: tooltip width ≤ 240px)
+        left = Math.max(8 + 120, Math.min(left, window.innerWidth - 120 - 8));
+        // If below the fold, flip above
+        if (top + 40 > window.innerHeight) top = r.top - 40;
+
+        tip.style.left = left + 'px';
+        tip.style.top  = top  + 'px';
+    }, true);
+
+    document.addEventListener('mouseleave', function(e) {
+        if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-tooltip')) {
+            tip.classList.remove('visible');
+        }
+    }, true);
+}
 
 // Add this after the existing window.onload function
 window.addEventListener('DOMContentLoaded', () => {
@@ -521,4 +618,11 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Vault health: initial check + poll every 30 s
+    fetchVaultHealth();
+    setInterval(fetchVaultHealth, 30000);
+
+    // Styled tooltips
+    initTooltips();
 });

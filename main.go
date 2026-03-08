@@ -7,18 +7,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/vault/api"
+	"golang.org/x/time/rate"
 )
 
 // Version is set during build
 var Version = "dev"
 var GithubURL = ""
-var MaxRequestSize int64 = 5 * 1024 * 1024 // Default 5MB
+var MaxRequestSize int64 = 5 * 1024 * 1024 // Default 5 MB
+
+var requestCounter uint64
 
 func init() {
-	// Set up log
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 
 	if url := os.Getenv("GITHUB_URL"); url != "" {
@@ -29,67 +31,103 @@ func init() {
 		if size, err := strconv.ParseInt(sizeStr, 10, 64); err == nil {
 			MaxRequestSize = size
 		} else {
-			log.Printf("Invalid MAX_REQUEST_SIZE: %v, using default: %d", err, MaxRequestSize)
+			log.Printf("WARN  invalid MAX_REQUEST_SIZE: %v — using default %d bytes", err, MaxRequestSize)
 		}
 	}
 
-	// Read version from file if available
-	data, err := os.ReadFile("version.txt")
-	if err == nil {
+	if data, err := os.ReadFile("version.txt"); err == nil {
 		Version = strings.TrimSpace(string(data))
 	}
 
 	log.Printf("Starting Vault Data Wrapper v%s", Version)
 }
 
+// nextReqID returns a monotonically incrementing request ID string.
+func nextReqID() string {
+	return fmt.Sprintf("%05d", atomic.AddUint64(&requestCounter, 1))
+}
+
+// loggingMiddleware logs the start and end of every HTTP request.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (sr *statusRecorder) WriteHeader(code int) {
+	sr.status = code
+	sr.ResponseWriter.WriteHeader(code)
+}
+
+func loggingMiddleware(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := nextReqID()
+		start := time.Now()
+		ip := getClientIP(r)
+		log.Printf("INFO  [%s] --> %s %s ip=%s ua=%q", id, r.Method, r.URL.Path, ip, r.UserAgent())
+
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		// Inject request ID so handlers can reference it.
+		r.Header.Set("X-Request-ID", id)
+		h(rec, r)
+
+		log.Printf("INFO  [%s] <-- %d (%s)", id, rec.status, time.Since(start).Round(time.Microsecond))
+	}
+}
+
 func checkVaultConnectivity() error {
-	log.Println("Checking Vault connectivity...")
-	client, err := api.NewClient(&api.Config{Address: vaultAddr})
+	log.Println("INFO  checking Vault connectivity...")
+	health, err := vaultClient.Sys().Health()
 	if err != nil {
-		return fmt.Errorf("failed to create Vault client: %v", err)
+		return fmt.Errorf("failed to reach Vault: %w", err)
 	}
-
-	client.SetToken(vaultToken)
-
-	// Check Vault health
-	health, err := client.Sys().Health()
-	if err != nil {
-		return fmt.Errorf("failed to check Vault health: %v", err)
-	}
-
 	if !health.Initialized {
 		return fmt.Errorf("vault is not initialized")
 	}
-
 	if health.Sealed {
 		return fmt.Errorf("vault is sealed")
 	}
-
-	log.Println("Vault connectivity check passed")
+	log.Printf("INFO  Vault connectivity OK (version=%s cluster=%s)", health.Version, health.ClusterName)
 	return nil
 }
 
 func main() {
-	// Check Vault connectivity
+	// Initialise the shared Vault client before anything else.
+	if err := initVaultClient(); err != nil {
+		log.Fatalf("FATAL failed to initialise Vault client: %v", err)
+	}
+
+	// Check Vault connectivity with retries.
 	for i := 0; i < 5; i++ {
 		if err := checkVaultConnectivity(); err != nil {
-			log.Printf("Vault connectivity check failed: %v. Retrying in 5 seconds...\n", err)
+			log.Printf("WARN  Vault connectivity check failed (attempt %d/5): %v — retrying in 5s", i+1, err)
 			time.Sleep(5 * time.Second)
 		} else {
 			break
 		}
 	}
 
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/wrap", wrapHandler)
-	http.HandleFunc("/unwrap", unwrapHandler)
-	http.HandleFunc("/api/version", versionHandler)
+	// Start background cleanup of idle rate-limiter entries.
+	go cleanupVisitors()
 
-	// Serve static files
+	// Rate limits:  wrap = 10 req/min per IP (burst 5)
+	//              unwrap = 30 req/min per IP (burst 10)
+	wrapRate := rate.Every(6 * time.Second) // 10/min
+	unwrapRate := rate.Every(2 * time.Second) // 30/min
+
+	// Apply logging + rate-limiting middleware to API endpoints.
+	http.HandleFunc("/", loggingMiddleware(indexHandler))
+	http.HandleFunc("/wrap", loggingMiddleware(
+		rateLimitMiddleware(wrapHandler, wrapRate, 5, "wrap")))
+	http.HandleFunc("/unwrap", loggingMiddleware(
+		rateLimitMiddleware(unwrapHandler, unwrapRate, 10, "unwrap")))
+	http.HandleFunc("/api/version", loggingMiddleware(versionHandler))
+	http.HandleFunc("/api/health", loggingMiddleware(vaultHealthHandler))
+
+	// Serve static files (no logging middleware — high frequency, low value)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	log.Println("Server starting on :3001")
+	log.Println("INFO  server listening on :3001")
 	if err := http.ListenAndServe(":3001", nil); err != nil {
 		log.Fatal(err)
 	}
