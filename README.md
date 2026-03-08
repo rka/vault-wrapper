@@ -85,10 +85,8 @@ Invoke-RestMethod -Uri "http://localhost:3001/unwrap" -Method Post -ContentType 
 ```
 
 ## Screenshots
+<img width="839" height="736" alt="image" src="https://github.com/user-attachments/assets/4d2cd5d4-8191-47d3-98f4-54bc4895311a" />
 
- ![Dark Mode](image-1.png)
-
- ![Light Mode](image-2.png)
 
 ## Built With
 
