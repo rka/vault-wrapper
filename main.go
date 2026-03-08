@@ -111,7 +111,7 @@ func main() {
 
 	// Rate limits:  wrap = 10 req/min per IP (burst 5)
 	//              unwrap = 30 req/min per IP (burst 10)
-	wrapRate := rate.Every(6 * time.Second) // 10/min
+	wrapRate := rate.Every(6 * time.Second)   // 10/min
 	unwrapRate := rate.Every(2 * time.Second) // 30/min
 
 	// Apply logging + rate-limiting middleware to API endpoints.

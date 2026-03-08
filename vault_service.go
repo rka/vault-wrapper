@@ -117,7 +117,7 @@ func lookupWrappingToken(token string) (*api.Secret, error) {
 
 // VaultHealth describes the current state of the Vault backend.
 type VaultHealth struct {
-	Status      string `json:"status"`                  // "healthy" | "standby" | "unhealthy"
+	Status      string `json:"status"` // "healthy" | "standby" | "unhealthy"
 	Initialized bool   `json:"initialized"`
 	Sealed      bool   `json:"sealed"`
 	Standby     bool   `json:"standby"`
