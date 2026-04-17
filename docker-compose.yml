@@ -4,6 +4,9 @@ services:
     container_name: vault
     image: hashicorp/vault:latest
     hostname: vault
+    cap_add:
+      - IPC_LOCK
+      - SETFCAP
     environment:
       - VAULT_DEV=true  # Enable dev mode for testing (insecure, use only for testing)
       - VAULT_DEV_LISTEN_ADDRESS=127.0.0.1:8201 # Move dev listener to avoid conflict with VAULT_LOCAL_CONFIG
