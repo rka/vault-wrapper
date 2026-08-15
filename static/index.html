@@ -8,12 +8,12 @@
     <title>Vault Wrapper — One-time secret sharing</title>
     <link rel="stylesheet" href="/static/lib/codemirror/codemirror-6.65.7.min.css">
     <link rel="stylesheet" href="/static/lib/codemirror/theme/dracula.min.css">
-    <link rel="stylesheet" href="/static/styles.css?v=2">
+    <link rel="stylesheet" href="/static/styles.css?v=3">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 </head>
-<body>
+<body data-accent="violet">
     <div class="page-glow" aria-hidden="true"></div>
     <div class="app-shell">
         <header class="app-header">
@@ -33,6 +33,11 @@
                     </summary>
                     <div class="status-popover" id="vaultStatusPanel"></div>
                 </details>
+                <div class="accent-picker" id="accentPicker" role="group" aria-label="Accent color">
+                    <button class="accent-option accent-violet active" type="button" data-accent="violet" aria-label="Use violet accent" aria-pressed="true" title="Violet"></button>
+                    <button class="accent-option accent-ocean" type="button" data-accent="ocean" aria-label="Use ocean accent" aria-pressed="false" title="Ocean"></button>
+                    <button class="accent-option accent-copper" type="button" data-accent="copper" aria-label="Use copper accent" aria-pressed="false" title="Copper"></button>
+                </div>
                 <button class="icon-button" id="themeToggle" type="button" aria-label="Use dark theme" title="Change theme">
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3.7" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -157,6 +162,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="/static/lib/codemirror/codemirror-6.65.7.min.js"></script>
     <script src="/static/lib/codemirror/mode/javascript/javascript.min.js"></script>
-    <script src="/static/app.js?v=6"></script>
+    <script src="/static/app.js?v=7"></script>
 </body>
 </html>

@@ -17,6 +17,7 @@ let unwrapEditor = null;
 
 const elements = {
     body: document.body,
+    accentPicker: document.getElementById("accentPicker"),
     themeToggle: document.getElementById("themeToggle"),
     dropZone: document.getElementById("dropZone"),
     attachButton: document.getElementById("attachButton"),
@@ -77,6 +78,27 @@ function applyTheme(theme) {
     unwrapEditor?.setOption("theme", isDark ? "dracula" : "default");
 }
 
+function preferredAccent() {
+    try {
+        const saved = localStorage.getItem("vault-wrapper-accent");
+        if (["violet", "ocean", "copper"].includes(saved)) return saved;
+    } catch (_) {
+        // Storage can be unavailable in privacy modes; use the default accent.
+    }
+    return "violet";
+}
+
+function applyAccent(accent) {
+    const selected = ["violet", "ocean", "copper"].includes(accent) ? accent : "violet";
+    elements.body.dataset.accent = selected;
+    elements.accentPicker.querySelectorAll("[data-accent]").forEach((button) => {
+        const isActive = button.dataset.accent === selected;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
+}
+
+applyAccent(preferredAccent());
 applyTheme(preferredTheme());
 
 wrapEditor = CodeMirror(document.getElementById("wrapInput"), {
@@ -841,6 +863,12 @@ elements.themeToggle.addEventListener("click", () => {
     const next = elements.body.classList.contains("dark-mode") ? "light" : "dark";
     applyTheme(next);
     try { localStorage.setItem("vault-wrapper-theme", next); } catch (_) { /* optional */ }
+});
+elements.accentPicker.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-accent]");
+    if (!button) return;
+    applyAccent(button.dataset.accent);
+    try { localStorage.setItem("vault-wrapper-accent", button.dataset.accent); } catch (_) { /* optional */ }
 });
 
 document.querySelectorAll("[role=tab]").forEach((button) => {

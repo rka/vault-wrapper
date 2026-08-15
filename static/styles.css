@@ -12,6 +12,9 @@
     --accent: #6559e8;
     --accent-strong: #5044d2;
     --accent-soft: #eeecff;
+    --accent-contrast: #ffffff;
+    --glow-primary: rgba(101, 89, 232, .12);
+    --glow-secondary: rgba(40, 188, 165, .10);
     --success: #16825d;
     --success-soft: #e8f7f1;
     --warning: #a86314;
@@ -41,6 +44,9 @@ body.dark-mode {
     --accent: #968cff;
     --accent-strong: #aba3ff;
     --accent-soft: rgba(150, 140, 255, .14);
+    --accent-contrast: #0d1017;
+    --glow-primary: rgba(101, 89, 232, .18);
+    --glow-secondary: rgba(40, 188, 165, .08);
     --success: #54d2a1;
     --success-soft: rgba(84, 210, 161, .12);
     --warning: #f0b45f;
@@ -48,6 +54,35 @@ body.dark-mode {
     --danger: #ff8993;
     --danger-soft: rgba(255, 137, 147, .11);
     --shadow-md: 0 18px 50px rgba(0, 0, 0, .28), 0 2px 8px rgba(0, 0, 0, .22);
+}
+
+body[data-accent="ocean"] {
+    --accent: #167d78;
+    --accent-strong: #106863;
+    --accent-soft: #e4f5f3;
+    --glow-primary: rgba(22, 125, 120, .13);
+    --glow-secondary: rgba(48, 133, 190, .09);
+}
+body.dark-mode[data-accent="ocean"] {
+    --accent: #4fc2b8;
+    --accent-strong: #74d8d0;
+    --accent-soft: rgba(79, 194, 184, .14);
+    --glow-primary: rgba(35, 155, 146, .17);
+    --glow-secondary: rgba(52, 128, 187, .09);
+}
+body[data-accent="copper"] {
+    --accent: #a65c2a;
+    --accent-strong: #85451c;
+    --accent-soft: #fbeee5;
+    --glow-primary: rgba(166, 92, 42, .13);
+    --glow-secondary: rgba(182, 132, 51, .08);
+}
+body.dark-mode[data-accent="copper"] {
+    --accent: #cf8248;
+    --accent-strong: #e7a16c;
+    --accent-soft: rgba(207, 130, 72, .14);
+    --glow-primary: rgba(190, 103, 48, .17);
+    --glow-secondary: rgba(176, 131, 55, .08);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -72,15 +107,16 @@ button { color: inherit; }
     height: 560px;
     pointer-events: none;
     background:
-        radial-gradient(circle at 14% 12%, rgba(101, 89, 232, .12), transparent 32%),
-        radial-gradient(circle at 88% 4%, rgba(40, 188, 165, .10), transparent 29%),
+        radial-gradient(circle at 14% 12%, var(--glow-primary), transparent 32%),
+        radial-gradient(circle at 88% 4%, var(--glow-secondary), transparent 29%),
         linear-gradient(to bottom, rgba(255, 255, 255, .58), transparent 74%);
     z-index: -1;
+    transition: background 260ms ease;
 }
 .dark-mode .page-glow {
     background:
-        radial-gradient(circle at 14% 10%, rgba(101, 89, 232, .18), transparent 34%),
-        radial-gradient(circle at 88% 4%, rgba(40, 188, 165, .08), transparent 28%);
+        radial-gradient(circle at 14% 10%, var(--glow-primary), transparent 34%),
+        radial-gradient(circle at 88% 4%, var(--glow-secondary), transparent 28%);
 }
 
 .app-shell { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
@@ -99,6 +135,49 @@ button { color: inherit; }
 .brand strong { font-size: .98rem; letter-spacing: -.015em; }
 .brand small { margin-top: 2px; color: var(--ink-faint); font-size: .72rem; }
 .header-actions { display: flex; align-items: center; gap: 9px; }
+
+.accent-picker {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    box-shadow: var(--shadow-sm);
+}
+.accent-option {
+    --swatch: var(--accent);
+    width: 25px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+}
+.accent-option::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 99px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+    opacity: .72;
+    transition: transform var(--ease), box-shadow var(--ease), opacity var(--ease);
+}
+.accent-option:hover::before { opacity: 1; transform: scale(1.16); }
+.accent-option.active { background: var(--surface-strong); }
+.accent-option.active::before {
+    opacity: 1;
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--swatch) 72%, var(--line-strong));
+}
+.accent-violet { --swatch: #7569eb; }
+.accent-ocean { --swatch: #218f88; }
+.accent-copper { --swatch: #b66c36; }
 
 .icon-button, .vault-status summary {
     min-height: 38px;
@@ -257,7 +336,7 @@ button { color: inherit; }
 .one-time-callout strong { color: var(--ink); font-size: .75rem; }
 .one-time-callout small { color: var(--ink-soft); font-size: .68rem; }
 
-.primary-button { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 16px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; box-shadow: 0 7px 18px color-mix(in srgb, var(--accent) 25%, transparent); font-size: .82rem; font-weight: 740; cursor: pointer; transition: background var(--ease), transform var(--ease), box-shadow var(--ease); }
+.primary-button { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 16px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-contrast); box-shadow: 0 7px 18px color-mix(in srgb, var(--accent) 25%, transparent); font-size: .82rem; font-weight: 740; cursor: pointer; transition: background var(--ease), transform var(--ease), box-shadow var(--ease); }
 .primary-button:hover:not(:disabled) { background: var(--accent-strong); transform: translateY(-1px); box-shadow: 0 9px 22px color-mix(in srgb, var(--accent) 30%, transparent); }
 .primary-button:active:not(:disabled) { transform: translateY(0); }
 .primary-button:disabled { opacity: .65; cursor: wait; }
@@ -408,7 +487,8 @@ input:focus-visible, .CodeMirror textarea:focus-visible { outline: none; }
 
 @media (max-width: 680px) {
     .app-shell { width: min(100% - 26px, 1160px); }
-    .app-header { min-height: 70px; }
+    .app-header { min-height: 70px; gap: 8px; }
+    .header-actions { gap: 5px; }
     .brand small, #vaultStatusLabel { display: none; }
     .vault-status summary { width: 38px; justify-content: center; padding: 0; }
     .vault-status summary > svg { display: none; }
