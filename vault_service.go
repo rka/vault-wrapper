@@ -23,7 +23,7 @@ func init() {
 	}
 	if vaultToken == "" {
 		vaultToken = "root"
-		log.Println("VAULT_TOKEN not set, using default: root")
+		log.Println("WARN  VAULT_TOKEN not set, using insecure development default: root")
 	}
 }
 
@@ -68,6 +68,9 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	if err != nil {
 		return "", nil, fmt.Errorf("wrapData: failed to parse response: %w", err)
 	}
+	if secret == nil || secret.WrapInfo == nil || secret.WrapInfo.Token == "" {
+		return "", nil, fmt.Errorf("wrapData: Vault response did not include wrapping information")
+	}
 
 	return secret.WrapInfo.Token, secret.WrapInfo, nil
 }
@@ -87,6 +90,9 @@ func unwrapData(token string) (map[string]interface{}, error) {
 	secret, err := c.Logical().UnwrapWithContext(ctx, "")
 	if err != nil {
 		return nil, fmt.Errorf("unwrapData: failed to unwrap: %w", err)
+	}
+	if secret == nil || secret.Data == nil {
+		return nil, fmt.Errorf("unwrapData: Vault returned an empty response")
 	}
 
 	return secret.Data, nil
@@ -112,6 +118,9 @@ func lookupWrappingToken(token string) (*api.Secret, error) {
 		return nil, fmt.Errorf("lookupWrappingToken: failed to parse response: %w", err)
 	}
 
+	if secret == nil {
+		return nil, fmt.Errorf("lookupWrappingToken: Vault returned an empty response")
+	}
 	return secret, nil
 }
 
@@ -129,43 +138,25 @@ type VaultHealth struct {
 // getVaultHealth polls Vault's health endpoint and returns a structured status.
 // A 3-second context guards against a hung Vault instance.
 func getVaultHealth() VaultHealth {
-	type result struct {
-		h   *api.HealthResponse
-		err error
-	}
-
-	ch := make(chan result, 1)
-	go func() {
-		h, err := vaultClient.Sys().Health()
-		ch <- result{h, err}
-	}()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
-	select {
-	case <-ctx.Done():
-		log.Println("getVaultHealth: health check timed out")
-		return VaultHealth{Status: "unhealthy", Message: "health check timed out"}
-	case r := <-ch:
-		if r.err != nil {
-			log.Printf("getVaultHealth: error from Vault: %v", r.err)
-			return VaultHealth{Status: "unhealthy", Message: r.err.Error()}
-		}
-		h := r.h
-		status := "healthy"
-		if !h.Initialized || h.Sealed {
-			status = "unhealthy"
-		} else if h.Standby {
-			status = "standby"
-		}
-		return VaultHealth{
-			Status:      status,
-			Initialized: h.Initialized,
-			Sealed:      h.Sealed,
-			Standby:     h.Standby,
-			Version:     h.Version,
-			ClusterName: h.ClusterName,
-		}
+	h, err := vaultClient.Sys().HealthWithContext(ctx)
+	if err != nil {
+		log.Printf("getVaultHealth: error from Vault: %v", err)
+		return VaultHealth{Status: "unhealthy", Message: "Vault health check failed"}
+	}
+	status := "healthy"
+	if !h.Initialized || h.Sealed {
+		status = "unhealthy"
+	} else if h.Standby {
+		status = "standby"
+	}
+	return VaultHealth{
+		Status:      status,
+		Initialized: h.Initialized,
+		Sealed:      h.Sealed,
+		Standby:     h.Standby,
+		Version:     h.Version,
+		ClusterName: h.ClusterName,
 	}
 }

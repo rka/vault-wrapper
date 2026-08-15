@@ -2,7 +2,7 @@
 FROM golang:1.26-alpine AS builder
 
 # Install necessary build tools
-RUN apk add --no-cache git build-base
+RUN apk add --no-cache git
 
 WORKDIR /app
 
@@ -29,14 +29,18 @@ LABEL version="${VERSION}"
 # Add necessary runtime dependencies
 RUN apk add --no-cache ca-certificates tzdata
 
+RUN addgroup -S app && adduser -S -G app app
+
 WORKDIR /app
 
 # Copy binary and static files from builder
-COPY --from=builder /app/main .
-COPY --from=builder /app/static ./static
+COPY --from=builder --chown=app:app /app/main .
+COPY --from=builder --chown=app:app /app/static ./static
 
 # Set necessary permissions
 RUN chmod +x /app/main
+
+USER app
 
 EXPOSE 3001
 

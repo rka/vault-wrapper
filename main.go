@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,8 +16,9 @@ import (
 
 // Version is set during build
 var Version = "dev"
-var GithubURL = ""
-var MaxRequestSize int64 = 5 * 1024 * 1024 // Default 5 MB
+var GithubURL = "https://github.com/rka/vault-wrapper"
+var MaxRequestSize int64 = 5 * 1024 * 1024 // Maximum decoded payload size; default 5 MB.
+var TrustProxyHeaders bool
 
 var requestCounter uint64
 
@@ -28,12 +30,13 @@ func init() {
 	}
 
 	if sizeStr := os.Getenv("MAX_REQUEST_SIZE"); sizeStr != "" {
-		if size, err := strconv.ParseInt(sizeStr, 10, 64); err == nil {
+		if size, err := strconv.ParseInt(sizeStr, 10, 64); err == nil && size > 0 {
 			MaxRequestSize = size
 		} else {
 			log.Printf("WARN  invalid MAX_REQUEST_SIZE: %v — using default %d bytes", err, MaxRequestSize)
 		}
 	}
+	TrustProxyHeaders, _ = strconv.ParseBool(os.Getenv("TRUST_PROXY_HEADERS"))
 
 	if data, err := os.ReadFile("version.txt"); err == nil {
 		Version = strings.TrimSpace(string(data))
@@ -50,10 +53,15 @@ func nextReqID() string {
 // loggingMiddleware logs the start and end of every HTTP request.
 type statusRecorder struct {
 	http.ResponseWriter
-	status int
+	status      int
+	wroteHeader bool
 }
 
 func (sr *statusRecorder) WriteHeader(code int) {
+	if sr.wroteHeader {
+		return
+	}
+	sr.wroteHeader = true
 	sr.status = code
 	sr.ResponseWriter.WriteHeader(code)
 }
@@ -66,8 +74,9 @@ func loggingMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		log.Printf("INFO  [%s] --> %s %s ip=%s ua=%q", id, r.Method, r.URL.Path, ip, r.UserAgent())
 
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
-		// Inject request ID so handlers can reference it.
+		// Expose the request ID to handlers and clients for support diagnostics.
 		r.Header.Set("X-Request-ID", id)
+		w.Header().Set("X-Request-ID", id)
 		h(rec, r)
 
 		log.Printf("INFO  [%s] <-- %d (%s)", id, rec.status, time.Since(start).Round(time.Microsecond))
@@ -76,7 +85,9 @@ func loggingMiddleware(h http.HandlerFunc) http.HandlerFunc {
 
 func checkVaultConnectivity() error {
 	log.Println("INFO  checking Vault connectivity...")
-	health, err := vaultClient.Sys().Health()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	health, err := vaultClient.Sys().HealthWithContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to reach Vault: %w", err)
 	}
@@ -115,20 +126,30 @@ func main() {
 	unwrapRate := rate.Every(2 * time.Second) // 30/min
 
 	// Apply logging + rate-limiting middleware to API endpoints.
-	http.HandleFunc("/", loggingMiddleware(indexHandler))
-	http.HandleFunc("/wrap", loggingMiddleware(
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", loggingMiddleware(indexHandler))
+	mux.HandleFunc("/wrap", loggingMiddleware(
 		rateLimitMiddleware(wrapHandler, wrapRate, 5, "wrap")))
-	http.HandleFunc("/unwrap", loggingMiddleware(
+	mux.HandleFunc("/unwrap", loggingMiddleware(
 		rateLimitMiddleware(unwrapHandler, unwrapRate, 10, "unwrap")))
-	http.HandleFunc("/api/version", loggingMiddleware(versionHandler))
-	http.HandleFunc("/api/health", loggingMiddleware(vaultHealthHandler))
+	mux.HandleFunc("/api/version", loggingMiddleware(versionHandler))
+	mux.HandleFunc("/api/health", loggingMiddleware(vaultHealthHandler))
 
 	// Serve static files (no logging middleware — high frequency, low value)
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	log.Println("INFO  server listening on :3001")
-	if err := http.ListenAndServe(":3001", nil); err != nil {
+	server := &http.Server{
+		Addr:              ":3001",
+		Handler:           securityHeadersMiddleware(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       20 * time.Second,
+		WriteTimeout:      20 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
