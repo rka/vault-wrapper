@@ -214,6 +214,7 @@ button { color: inherit; }
 .CodeMirror { height: 270px; background: var(--surface); color: var(--ink); font-family: var(--mono); font-size: .84rem; line-height: 1.65; }
 .CodeMirror-gutters { border-right-color: var(--line); background: var(--surface-soft); }
 .CodeMirror-linenumber { color: var(--ink-faint); }
+.CodeMirror.single-line-editor .CodeMirror-gutter-wrapper { left: calc(-1 * var(--single-line-gutter)) !important; }
 .CodeMirror-cursor { border-left-color: var(--ink); }
 .CodeMirror-selected { background: var(--accent-soft) !important; }
 .dark-mode .CodeMirror { background: #121620; }

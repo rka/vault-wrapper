@@ -101,6 +101,18 @@ wrapEditor.getInputField().setAttribute("autocomplete", "off");
 wrapEditor.getInputField().setAttribute("spellcheck", "false");
 unwrapEditor.getInputField().setAttribute("aria-label", "Unwrapped text content");
 
+// CodeMirror reports a zero gutter offset for its only empty line even though
+// the gutter is already visible. Keep that one-line gutter aligned using its
+// measured width; CodeMirror resumes normal positioning once more lines exist.
+const wrapEditorElement = wrapEditor.getWrapperElement();
+function syncSingleLineGutter() {
+    const gutter = wrapEditorElement.querySelector(".CodeMirror-gutters");
+    if (gutter) wrapEditorElement.style.setProperty("--single-line-gutter", `${gutter.getBoundingClientRect().width}px`);
+    wrapEditorElement.classList.toggle("single-line-editor", wrapEditor.lineCount() === 1);
+}
+syncSingleLineGutter();
+window.requestAnimationFrame(syncSingleLineGutter);
+
 function formatBytes(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
     const units = ["B", "KB", "MB", "GB"];
@@ -869,7 +881,10 @@ elements.dropZone.addEventListener("drop", (event) => {
     queueFiles(event.dataTransfer?.files);
 });
 
-wrapEditor.on("change", updateSizeMeter);
+wrapEditor.on("change", () => {
+    updateSizeMeter();
+    syncSingleLineGutter();
+});
 wrapEditor.on("drop", (_, event) => {
     event.preventDefault();
     event.stopPropagation();
