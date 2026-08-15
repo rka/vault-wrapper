@@ -135,8 +135,12 @@
                         </div>
                     </div>
 
-                    <section id="unwrapResult" class="opened-result" aria-labelledby="openedResultTitle" hidden>
-                        <div class="result-header"><span class="success-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 10 3.2 3.2L15.5 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><span class="step-label">Retrieved successfully</span><h2 id="openedResultTitle">Secret opened</h2></div><span class="consumed-badge">Token consumed</span></div>
+                    <section id="unwrapResult" class="opened-result" aria-labelledby="openedResultTitle" aria-live="polite" hidden>
+                        <div class="result-header opened-result-header">
+                            <span class="success-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 10 3.2 3.2L15.5 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div><span class="step-label">Retrieval complete</span><h2 id="openedResultTitle" tabindex="-1">Secret retrieved</h2><p class="opened-result-intro">The one-time token has been consumed. Copy or download the contents before leaving this page.</p></div>
+                            <div class="opened-result-actions"><span class="consumed-badge"><span aria-hidden="true"></span>Token consumed</span><button id="openAnotherButton" class="secondary-button" type="button">Open another</button></div>
+                        </div>
                         <div id="unwrappedTextBlock" class="unwrapped-text" hidden><div class="result-toolbar"><span>Text content</span><button id="copyUnwrappedText" class="text-button" type="button">Copy text</button></div><div id="unwrapEditor" class="code-editor"></div></div>
                         <div id="downloadList" class="download-list"></div>
                         <details id="unwrapMetaDetails" class="technical-details" hidden><summary>Retrieval metadata <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><pre id="unwrapDetails"></pre></details>
