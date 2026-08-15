@@ -35,7 +35,7 @@ services:
       - VAULT_ADDR=http://vault:8200 # Or your Vault address
       - VAULT_TOKEN=root # Or your Vault token
       - GITHUB_URL=https://github.com/rka/vault-wrapper
-      - MAX_REQUEST_SIZE=5242880 # 5MB
+      - MAX_REQUEST_SIZE=17825792 # 17 MiB decoded payload; fits Vault's default 32 MiB request cap after encoding
       - TRUST_PROXY_HEADERS=true # Safe here because Traefik is the only public entrypoint
     labels:
       com.github.saltbox.saltbox_managed: true
