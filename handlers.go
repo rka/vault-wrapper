@@ -274,9 +274,9 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataString, ok := dataMap["data"].(string)
-	if !ok {
-		log.Printf("ERROR [%s] unwrap: unexpected data shape", reqID(r))
+	dataString, err := decodeVaultPayload(dataMap["data"])
+	if err != nil {
+		log.Printf("ERROR [%s] unwrap: unexpected data shape: %v", reqID(r), err)
 		http.Error(w, "Vault returned an unexpected payload", http.StatusBadGateway)
 		return
 	}

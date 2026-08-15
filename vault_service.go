@@ -2,13 +2,27 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/vault/api"
 )
+
+const (
+	vaultEnvelopeFormat = "vault-wrapper/base64-chunks-v1"
+	// Encoded chunks are 256 KiB, safely below Vault's default 1 MiB
+	// max_json_string_value_length while keeping the envelope compact.
+	vaultPayloadChunkSize = 192 * 1024
+)
+
+type vaultPayloadEnvelope struct {
+	Format string   `json:"format"`
+	Chunks []string `json:"chunks"`
+}
 
 var (
 	vaultAddr   = os.Getenv("VAULT_ADDR")
@@ -54,7 +68,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 
 	req := vaultClient.NewRequest("POST", "/v1/sys/wrapping/wrap")
 	req.WrapTTL = ttl + "s"
-	if err := req.SetJSONBody(map[string]interface{}{"data": data}); err != nil {
+	if err := req.SetJSONBody(map[string]interface{}{"data": encodeVaultPayload(data)}); err != nil {
 		return "", nil, fmt.Errorf("wrapData: failed to set request body: %w", err)
 	}
 
@@ -73,6 +87,56 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	}
 
 	return secret.WrapInfo.Token, secret.WrapInfo, nil
+}
+
+func encodeVaultPayload(data string) vaultPayloadEnvelope {
+	chunks := make([]string, 0, (len(data)+vaultPayloadChunkSize-1)/vaultPayloadChunkSize)
+	for start := 0; start < len(data); start += vaultPayloadChunkSize {
+		end := min(start+vaultPayloadChunkSize, len(data))
+		chunks = append(chunks, base64.StdEncoding.EncodeToString([]byte(data[start:end])))
+	}
+	if len(chunks) == 0 {
+		chunks = append(chunks, "")
+	}
+	return vaultPayloadEnvelope{Format: vaultEnvelopeFormat, Chunks: chunks}
+}
+
+// decodeVaultPayload accepts the chunked envelope as well as the legacy plain
+// string so links created by older versions remain usable.
+func decodeVaultPayload(value interface{}) (string, error) {
+	if legacy, ok := value.(string); ok {
+		return legacy, nil
+	}
+
+	envelope, ok := value.(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("unexpected payload type %T", value)
+	}
+	format, ok := envelope["format"].(string)
+	if !ok || format != vaultEnvelopeFormat {
+		return "", fmt.Errorf("unsupported payload envelope")
+	}
+	rawChunks, ok := envelope["chunks"].([]interface{})
+	if !ok || len(rawChunks) == 0 {
+		return "", fmt.Errorf("payload envelope has no chunks")
+	}
+
+	var decoded strings.Builder
+	for i, rawChunk := range rawChunks {
+		chunk, ok := rawChunk.(string)
+		if !ok {
+			return "", fmt.Errorf("payload chunk %d is not a string", i)
+		}
+		part, err := base64.StdEncoding.DecodeString(chunk)
+		if err != nil {
+			return "", fmt.Errorf("decode payload chunk %d: %w", i, err)
+		}
+		if int64(decoded.Len()+len(part)) > requestBodyLimit() {
+			return "", fmt.Errorf("decoded payload exceeds the request limit")
+		}
+		decoded.Write(part)
+	}
+	return decoded.String(), nil
 }
 
 func unwrapData(token string) (map[string]interface{}, error) {
