@@ -97,7 +97,7 @@ go vet ./...
 node --check static/app.js
 ```
 
-The API accepts JSON requests only, enforces a 30-day maximum wrapping TTL, and validates decoded attachment sizes before sending data to Vault.
+The API accepts JSON requests only, enforces a 30-day maximum wrapping TTL, validates decoded attachment sizes, and chunks its internal Vault envelope so permitted payloads stay below Vault's per-string JSON limit.
 
 ## Built With
 
