@@ -1,241 +1,160 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vault Data Wrapper</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="Share text and files with a time-limited, one-time Vault token.">
+    <title>Vault Wrapper — One-time secret sharing</title>
     <link rel="stylesheet" href="/static/lib/codemirror/codemirror-6.65.7.min.css">
     <link rel="stylesheet" href="/static/lib/codemirror/theme/dracula.min.css">
-    <link rel="stylesheet" href="/static/lib/codemirror/theme/solarized.min.css">
+    <link rel="stylesheet" href="/static/styles.css?v=2">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 </head>
-<body class="light-mode">
+<body>
+    <div class="page-glow" aria-hidden="true"></div>
     <div class="app-shell">
-
-        <!-- ── Header ── -->
         <header class="app-header">
-            <div class="brand">
-                <svg class="brand-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect width="36" height="36" rx="9" fill="currentColor" fill-opacity="0.12"/>
-                    <path d="M18 7L9 11.5V19C9 23.97 13.03 28.47 18 30C22.97 28.47 27 23.97 27 19V11.5L18 7Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="currentColor" fill-opacity="0.08"/>
-                    <path d="M14 18.5L16.5 21L22 15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <div class="brand-text">
-                    <span class="brand-title">Vault Data Wrapper</span>
-                    <span class="brand-subtitle">Secure one-time secret sharing</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <!-- Vault backend status indicator -->
-                <div class="vault-status" id="vaultStatus">
-                    <span class="vault-status-dot" id="vaultStatusDot" aria-hidden="true"></span>
-                    <span class="vault-status-label">Vault</span>
-                    <div class="vault-status-panel" id="vaultStatusPanel" role="tooltip" aria-hidden="true"></div>
-                </div>
+            <a class="brand" href="/" aria-label="Vault Wrapper home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none"><path d="M16 3.5 27 8.8v8.4c0 6-4.7 10.2-11 12.1C9.7 27.4 5 23.2 5 17.2V8.8L16 3.5Z" fill="currentColor" opacity=".16"/><path d="M16 5.8 24.8 10v7.1c0 4.6-3.4 8-8.8 9.8-5.4-1.8-8.8-5.2-8.8-9.8V10L16 5.8Z" stroke="currentColor" stroke-width="1.6"/><path d="m11.8 16.2 2.7 2.7 5.9-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span><strong>Vault Wrapper</strong><small>One-time secret sharing</small></span>
+            </a>
 
-                <button id="darkModeToggle" class="theme-toggle" onclick="toggleNightMode()" aria-label="Toggle theme" data-tooltip="Toggle theme" type="button">
-                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="5"/>
-                    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                </svg>
-            </button>
-            </div><!-- /.header-right -->
+            <div class="header-actions">
+                <details class="vault-status" id="vaultStatus">
+                    <summary aria-label="Vault service status">
+                        <span class="status-dot pending" id="vaultStatusDot" aria-hidden="true"></span>
+                        <span id="vaultStatusLabel">Checking Vault</span>
+                        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </summary>
+                    <div class="status-popover" id="vaultStatusPanel"></div>
+                </details>
+                <button class="icon-button" id="themeToggle" type="button" aria-label="Use dark theme" title="Change theme">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3.7" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+            </div>
         </header>
 
-        <!-- ── Main ── -->
-        <main class="app-main">
-
-            <!-- Tabs -->
-            <div class="tabs" role="tablist">
-                <button class="tab-btn active" data-tab="wrap" role="tab" aria-selected="true">
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10H13M10 7V13"/></svg>
-                    Wrap Data
-                </button>
-                <button class="tab-btn" data-tab="unwrap" role="tab" aria-selected="false">
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10H13"/></svg>
-                    Unwrap Data
-                </button>
-            </div>
-
-            <!-- ── Wrap Tab ── -->
-            <div id="wrap" class="tab-content active">
-                <div class="wrap-section">
-                    <div class="section-header">
-                        <h2>Wrap Data</h2>
-                        <span class="info-badge" data-tooltip="Enter text or code, or drag and drop files. The data will be encrypted in Vault and you'll receive a one-time token.">
-                            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
-                        </span>
-                    </div>
-
-                    <!-- Editor + Drop Zone -->
-                    <div id="dropZone" class="drop-zone">
-                        <div id="wrapInput" class="code-editor"></div>
-                        <button id="fileUploadIcon" class="file-attach-btn" data-tooltip="Attach files" type="button" aria-label="Attach files">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                            </svg>
-                        </button>
-                        <div class="drop-overlay" aria-hidden="true">
-                            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 34V38C8 40.2 9.8 42 12 42H36C38.2 42 40 40.2 40 38V34"/><path d="M24 6V30M15 21L24 6L33 21"/></svg>
-                            <span>Drop files here</span>
-                        </div>
-                    </div>
-
-                    <div id="wrapFileBubbleContainer" class="file-chips"></div>
-
-                    <!-- Size bar -->
-                    <div class="size-bar" id="sizeBar" data-size="0 B / 5 MB">
-                        <div id="sizeBarInner" class="size-bar-inner"></div>
-                    </div>
-
-                    <!-- Controls: TTL + action -->
-                    <div class="controls-row">
-                        <div class="ttl-group">
-                            <label class="field-label" for="ttl">Expires after</label>
-                            <div class="ttl-row">
-                                <div class="ttl-input-wrap">
-                                    <input type="number" id="ttl" value="3600" min="1" class="ttl-field" aria-label="TTL in seconds">
-                                    <span class="ttl-unit">sec</span>
-                                </div>
-                                <div class="ttl-presets" aria-label="TTL presets">
-                                    <button type="button" class="preset-btn" onclick="setTTL(3600)">1h</button>
-                                    <button type="button" class="preset-btn" onclick="setTTL(86400)">24h</button>
-                                    <button type="button" class="preset-btn" onclick="setTTL(604800)">7d</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="action-group">
-                            <button id="wrapBtn" class="btn btn-primary" onclick="wrapData()" type="button">
-                                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10H13M10 7V13"/></svg>
-                                Wrap
-                            </button>
-                            <span id="wrapSuccess" class="inline-success" role="status" aria-live="polite">
-                                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
-                                Wrapped!
-                            </span>
-                        </div>
-                    </div>
-
-                    <div id="wrapError" class="alert alert-error" role="alert" style="display: none;"></div>
-
-                    <!-- Result card (hidden until wrap succeeds) -->
-                    <div id="wrapResponseContainer" class="result-card" style="display: none;">
-                        <div class="result-card-header">
-                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                            <span>Data wrapped successfully</span>
-                        </div>
-
-                        <div class="token-warning" role="alert">
-                            <svg class="warning-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                            <span>This token can only be unwrapped <strong>once</strong>. The data is permanently deleted after retrieval.</span>
-                        </div>
-
-                        <div class="copy-field">
-                            <label class="field-label" for="wrappedToken">Wrapped Token</label>
-                            <div class="copy-input-wrap">
-                                <input type="text" id="wrappedToken" readonly onclick="copyToClipboard('wrappedToken')" placeholder="Token will appear here" aria-label="Wrapped token" spellcheck="false">
-                                <button class="copy-btn" onclick="copyToClipboard('wrappedToken')" data-tooltip="Copy token" type="button" aria-label="Copy token">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="copy-field">
-                            <label class="field-label" for="wrappedLink">Shareable Link</label>
-                            <div class="copy-input-wrap">
-                                <input type="text" id="wrappedLink" readonly onclick="copyToClipboard('wrappedLink')" placeholder="Link will appear here" aria-label="Shareable link" spellcheck="false">
-                                <button class="copy-btn" onclick="copyToClipboard('wrappedLink')" data-tooltip="Copy link" type="button" aria-label="Copy shareable link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <details class="details-accordion">
-                            <summary>
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5M8 11v.5"/></svg>
-                                Vault wrap details
-                                <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
-                            </summary>
-                            <div id="wrapDetails" class="details-box"></div>
-                        </details>
-                    </div>
+        <main>
+            <section class="hero" aria-labelledby="pageTitle">
+                <div class="eyebrow"><span></span>One-time secret exchange</div>
+                <h1 id="pageTitle">Share sensitive data<br>with a single-use link.</h1>
+                <p>Wrap text and files with a time-limited Vault token. Once retrieved, the contents cannot be opened again.</p>
+                <div class="trust-row" aria-label="Security properties">
+                    <span><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="m4 9 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Single use</span>
+                    <span><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 5.5V9l2.3 1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Time limited</span>
+                    <span><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="4" y="7.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 7.5V6a2.5 2.5 0 0 1 5 0v1.5" stroke="currentColor" stroke-width="1.5"/></svg>Vault secured</span>
                 </div>
-            </div>
+            </section>
 
-            <!-- ── Unwrap Tab ── -->
-            <div id="unwrap" class="tab-content">
-                <div class="unwrap-section">
-                    <div class="section-header">
-                        <h2>Unwrap Data</h2>
-                        <span class="info-badge" data-tooltip="Enter a wrapped token to retrieve its contents. The token is consumed on first use and cannot be reused.">
-                            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
-                        </span>
+            <section class="workspace" aria-label="Secret sharing workspace">
+                <div class="tabs" role="tablist" aria-label="Choose an action">
+                    <button id="wrapTab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="wrapPanel" data-tab="wrapPanel"><span class="tab-number">01</span> Create a secret</button>
+                    <button id="unwrapTab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="unwrapPanel" data-tab="unwrapPanel" tabindex="-1"><span class="tab-number">02</span> Open a secret</button>
+                </div>
+
+                <div id="wrapPanel" class="tab-panel active" role="tabpanel" aria-labelledby="wrapTab">
+                    <div class="workspace-grid">
+                        <div class="content-column">
+                            <div class="panel-heading">
+                                <div><span class="step-label">Secret payload</span><h2>What do you want to share?</h2></div>
+                                <span class="privacy-note"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 13.5 4v4.2c0 3-2.4 5.1-5.5 6.1-3.1-1-5.5-3.1-5.5-6.1V4L8 1.5Z" stroke="currentColor" stroke-width="1.3"/></svg>Sent directly to your Vault</span>
+                            </div>
+
+                            <div class="editor-card" id="dropZone">
+                                <div class="editor-toolbar">
+                                    <span><span class="editor-dot"></span>Text or code</span>
+                                    <button id="attachButton" class="text-button" type="button"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m16.5 9.3-6.7 6.8a4.2 4.2 0 0 1-6-6l7.1-7.2a2.9 2.9 0 0 1 4.1 4.2l-7.1 7.1a1.6 1.6 0 0 1-2.3-2.3l6.5-6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Attach files</button>
+                                    <input id="fileInput" type="file" multiple hidden>
+                                </div>
+                                <div id="wrapInput" class="code-editor"></div>
+                                <div class="drop-overlay" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 22V7m0 0-5 5m5-5 5 5M6 20v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><strong>Drop files to attach</strong></div>
+                            </div>
+
+                            <div id="attachmentList" class="attachment-list" aria-live="polite"></div>
+                            <div class="size-meter">
+                                <div class="size-meter-label"><span>Payload size</span><span id="sizeLabel">0 B of 5 MB</span></div>
+                                <div class="size-track" role="progressbar" aria-label="Payload size" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="sizeTrack"><span id="sizeBar"></span></div>
+                            </div>
+                        </div>
+
+                        <aside class="settings-column" aria-labelledby="expiryHeading">
+                            <div class="settings-card">
+                                <span class="step-label">Access policy</span>
+                                <h2 id="expiryHeading">Choose an expiry</h2>
+                                <p>The token stops working after this window—even if nobody opens it.</p>
+                                <div class="preset-grid" id="ttlPresets" aria-label="Expiry presets">
+                                    <button type="button" data-seconds="600">10 min</button><button type="button" class="active" data-seconds="3600">1 hour</button><button type="button" data-seconds="86400">24 hours</button><button type="button" data-seconds="604800">7 days</button>
+                                </div>
+                                <label class="field-label" for="ttl">Custom duration <span>seconds</span></label>
+                                <input class="field-input" type="number" id="ttl" value="3600" min="1" inputmode="numeric" autocomplete="off">
+                            </div>
+
+                            <div class="one-time-callout">
+                                <span class="callout-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.2 16.5 5v5c0 3.6-2.8 6.1-6.5 7.3C6.3 16.1 3.5 13.6 3.5 10V5L10 2.2Z" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 9.8 9.2 11.5l3.5-3.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                <span><strong>One view only</strong><small>Retrieval permanently consumes the token.</small></span>
+                            </div>
+
+                            <button id="wrapButton" class="primary-button" type="button"><span>Create secure link</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <div id="wrapError" class="alert error" role="alert" hidden></div>
+                        </aside>
                     </div>
 
-                    <div class="unwrap-input-group">
-                        <label class="field-label" for="unwrapInput">Wrapped Token</label>
-                        <div class="token-input-wrap">
-                            <input type="text" id="unwrapInput" placeholder="hvs.CAESIB…" autocomplete="off" spellcheck="false" aria-label="Wrapped token to unwrap">
-                            <button class="paste-btn" onclick="pasteToken()" data-tooltip="Paste from clipboard" type="button" aria-label="Paste token from clipboard">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                            </button>
+                    <section id="wrapResult" class="result-card" aria-labelledby="wrapResultTitle" hidden>
+                        <div class="result-header"><span class="success-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 10 3.2 3.2L15.5 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><span class="step-label">Ready to share</span><h2 id="wrapResultTitle">Your one-time link is sealed</h2></div></div>
+                        <p class="result-intro">Send the link through a trusted channel. Anyone with it can consume the secret once.</p>
+                        <div class="copy-grid">
+                            <label class="copy-field"><span>Shareable link</span><span class="copy-control"><input id="wrappedLink" type="text" readonly spellcheck="false"><button type="button" data-copy="wrappedLink">Copy link</button></span></label>
+                            <label class="copy-field"><span>Raw token</span><span class="copy-control"><input id="wrappedToken" type="text" readonly spellcheck="false"><button type="button" data-copy="wrappedToken">Copy token</button></span></label>
+                        </div>
+                        <details class="technical-details"><summary>Vault receipt <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><pre id="wrapDetails"></pre></details>
+                    </section>
+                </div>
+
+                <div id="unwrapPanel" class="tab-panel" role="tabpanel" aria-labelledby="unwrapTab" hidden>
+                    <div class="open-layout">
+                        <div class="open-copy">
+                            <span class="step-label">One-time retrieval</span><h2>Open a shared secret</h2><p>Paste the wrapped token below. We’ll show you exactly when it will be consumed.</p>
+                            <div class="destructive-note"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.2 17 16H3L10 2.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7v4m0 2.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span><strong>Opening is permanent</strong>The same token cannot be used again after a successful retrieval.</span></div>
+                        </div>
+                        <div class="open-form">
+                            <label class="field-label" for="unwrapInput">Wrapped token</label>
+                            <div class="token-control">
+                                <input id="unwrapInput" type="password" placeholder="hvs.CAESI…" autocomplete="off" spellcheck="false">
+                                <button id="toggleTokenVisibility" type="button" aria-label="Show token" title="Show token"><svg class="eye-open" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.4"/></svg></button>
+                                <button id="pasteButton" type="button">Paste</button>
+                            </div>
+                            <p id="sharedTokenNotice" class="shared-token-notice" hidden><span></span>A shared token is ready. Review the warning, then open it when you’re ready.</p>
+                            <button id="unwrapButton" class="primary-button danger-action" type="button"><span>Open and consume secret</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <div id="unwrapError" class="alert error" role="alert" hidden></div>
                         </div>
                     </div>
 
-                    <div class="action-group">
-                        <button id="unwrapBtn" class="btn btn-primary" onclick="unwrapData()" type="button">
-                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10H13"/></svg>
-                            Unwrap
-                        </button>
-                        <span id="unwrapSuccess" class="inline-success" role="status" aria-live="polite">
-                            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
-                            Unwrapped!
-                        </span>
-                    </div>
-
-                    <div id="unwrapError" class="alert alert-error" role="alert" style="display: none;"></div>
-
-                    <div id="unwrapResultContainer" class="unwrap-result">
-                        <div id="unwrapResult" class="code-editor"></div>
-                        <div id="fileBubbleContainer"></div>
-                    </div>
+                    <section id="unwrapResult" class="opened-result" aria-labelledby="openedResultTitle" hidden>
+                        <div class="result-header"><span class="success-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 10 3.2 3.2L15.5 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><span class="step-label">Retrieved successfully</span><h2 id="openedResultTitle">Secret opened</h2></div><span class="consumed-badge">Token consumed</span></div>
+                        <div id="unwrappedTextBlock" class="unwrapped-text" hidden><div class="result-toolbar"><span>Text content</span><button id="copyUnwrappedText" class="text-button" type="button">Copy text</button></div><div id="unwrapEditor" class="code-editor"></div></div>
+                        <div id="downloadList" class="download-list"></div>
+                        <details id="unwrapMetaDetails" class="technical-details" hidden><summary>Retrieval metadata <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><pre id="unwrapDetails"></pre></details>
+                    </section>
                 </div>
-            </div>
-
+            </section>
         </main>
 
-        <!-- ── Footer ── -->
         <footer class="app-footer">
-            <span id="appVersion"></span>
-            <span id="githubSection" style="display: none;">
-                <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="#" id="githubLink" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                    GitHub
-                </a>
-            </span>
+            <span class="footer-product"><span>Vault Wrapper</span><span id="appVersion" class="version-badge" aria-label="Application version" title="Version unavailable in static preview">v—</span></span>
+            <span class="footer-dot" aria-hidden="true">•</span><span>Secrets are never stored by this app</span>
+            <a id="githubLink" href="https://github.com/rka/vault-wrapper" target="_blank" rel="noopener noreferrer">GitHub <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3h7v7M13 3 5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9.5V13H3V4h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </footer>
-
     </div>
 
-    <!-- Toast notification -->
-    <div id="copiedBanner" class="toast" role="status" aria-live="polite">
-        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
-        Copied to clipboard
-    </div>
-
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="/static/lib/codemirror/codemirror-6.65.7.min.js"></script>
     <script src="/static/lib/codemirror/mode/javascript/javascript.min.js"></script>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=6"></script>
 </body>
 </html>

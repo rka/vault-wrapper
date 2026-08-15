@@ -1,0 +1,9 @@
+.git
+.github
+.fallow
+.agents
+.codex
+.tmp
+image-*.png
+*.md
+docker-compose.yml

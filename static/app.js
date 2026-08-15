@@ -1,628 +1,653 @@
-// Determine the preferred theme at page load time (before any DOM events).
-function getInitialTheme() {
-    const cookies = document.cookie.split(';').reduce((acc, c) => {
-        const [k, v] = c.trim().split('=');
-        acc[k] = v;
-        return acc;
-    }, {});
-    return cookies.theme === 'dark' ? 'dracula' : 'default';
-}
+"use strict";
 
-// Initialize CodeMirror editors with drop prevention
-let wrapEditor = CodeMirror(document.getElementById('wrapInput'), {
-    lineNumbers: true,
-    mode: 'javascript',
-    theme: getInitialTheme(),
-    lineWrapping: true,
-    dragDrop: false
-});
+const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
 
-let unwrapResultEditor = CodeMirror(document.getElementById('unwrapResult'), {
-    lineNumbers: true,
-    mode: 'javascript',
-    theme: getInitialTheme(),
-    readOnly: true,
-    lineWrapping: true
-});
-
-// Core elements
-const dropZone = document.getElementById('dropZone');
-const fileUploadIcon = document.getElementById('fileUploadIcon');
-const wrapSuccess = document.getElementById('wrapSuccess');
-const unwrapSuccess = document.getElementById('unwrapSuccess');
-let maxSize = 5 * 1024 * 1024; // Default 5MB, will be updated from API
-let uploadedFiles = [];
-
-// Handle drag over
-dropZone.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
-    dropZone.classList.add('dragover');
-});
-
-// Prevent default drop behavior that would read text files as text
-dropZone.addEventListener('drop', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    dropZone.classList.remove('dragover');
-    
-    // Handle only as files, never as text
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        handleFileUpload(files);
-    }
-    
-    // Clear any text data that might have been interpreted
-    event.dataTransfer.clearData();
-});
-
-// Handle drag leave
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-});
-
-// Handle file upload icon click
-fileUploadIcon.addEventListener('click', () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.multiple = true;
-    fileInput.onchange = () => {
-        if (fileInput.files.length > 0) {
-            handleFileUpload(fileInput.files);
-        }
-    };
-    fileInput.click();
-});
-
-// Prevent drop on the CodeMirror element explicitly
-wrapEditor.on('drop', (cm, event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    handleFileUpload(event.dataTransfer.files);
-});
-
-// Prevent dragover on CodeMirror
-wrapEditor.on('dragover', (cm, event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    dropZone.classList.add('dragover');
-});
-
-// Handle drag leave
-wrapEditor.on('dragleave', (cm, event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    dropZone.classList.remove('dragover');
-});
-
-// Handle file uploads (multiple files)
-function handleFileUpload(files) {
-    const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
-    const currentSize = uploadedFiles.reduce((sum, file) => sum + file.size, 0);
-    
-    if (totalSize + currentSize > maxSize) {
-        alert(`Adding these files would exceed the ${formatFileSize(maxSize)} limit.`);
-        return;
-    }
-
-    for (const file of files) {
-        if (file.size > maxSize) {
-            alert(`File "${file.name}" exceeds ${formatFileSize(maxSize)} limit and will not be added.`);
-            continue;
-        }
-
-        // Always treat as file, regardless of type
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            const uploadedFile = {
-                isFile: true,
-                name: file.name,
-                type: file.type || 'text/plain', // Fallback type for unknown files
-                data: base64Data,
-                size: file.size
-            };
-            uploadedFiles.push(uploadedFile);
-            displayWrapFileBubbles();
-            updateSizeBar();
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// Display the file bubbles in the wrap section
-function displayWrapFileBubbles() {
-    const wrapFileBubbleContainer = document.getElementById('wrapFileBubbleContainer');
-    wrapFileBubbleContainer.innerHTML = ''; // Clear previous content
-
-    uploadedFiles.forEach((file, index) => {
-        const fileBubble = document.createElement('div');
-        fileBubble.className = 'file-bubble';
-        const fileSizeFormatted = formatFileSize(file.size);
-        fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
-        fileBubble.title = 'Click to remove';
-
-        // Attach click event to remove the file
-        fileBubble.addEventListener('click', () => {
-            uploadedFiles.splice(index, 1);
-            displayWrapFileBubbles();
-            updateSizeBar();
-        });
-
-        wrapFileBubbleContainer.appendChild(fileBubble);
-    });
-}
-
-// Format file size into human-readable format
-function formatFileSize(bytes) {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 Bytes';
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
-    const size = bytes / Math.pow(1024, i);
-    return `${size.toFixed(2)} ${sizes[i]}`;
-}
-
-// Get text size in bytes
-function getTextSizeInBytes(text) {
-    return new TextEncoder().encode(text).length;
-}
-
-// Update size bar
-function updateSizeBar() {
-    const inputText = wrapEditor.getValue();
-    const textSize = getTextSizeInBytes(inputText);
-    const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
-    const totalSize = textSize + filesSize;
-    const percentage = (totalSize / maxSize) * 100;
-    const cappedPercentage = Math.min(percentage, 100);
-
-    const sizeBar = document.getElementById('sizeBar');
-      const sizeBarInner = document.getElementById('sizeBarInner');
-    sizeBarInner.style.width = `${cappedPercentage}%`;
-    
-    const totalSizeFormatted = formatFileSize(totalSize);
-    const maxSizeFormatted = formatFileSize(maxSize);
-    sizeBar.setAttribute('data-size', `${totalSizeFormatted} / ${maxSizeFormatted}`);
-
-    sizeBarInner.classList.remove('warning', 'error');
-    if (percentage > 90) {
-        sizeBarInner.classList.add('error');
-    } else if (percentage > 75) {
-        sizeBarInner.classList.add('warning');
-    }
-}
-
-// Update size bar when text changes
-wrapEditor.on('change', updateSizeBar);
-
-async function wrapData() {
-    const wrapButton = document.getElementById('wrapBtn');
-    const errorDiv = document.getElementById('wrapError');
-    wrapButton.classList.add('loading');
-    
-    // Clear previous error
-    errorDiv.style.display = 'none';
-
-    const inputText = wrapEditor.getValue();
-    const textSize = getTextSizeInBytes(inputText);
-    const filesSize = uploadedFiles.reduce((total, file) => total + file.size, 0);
-    const totalSize = textSize + filesSize;
-
-    if (totalSize > maxSize) {
-        errorDiv.textContent = `Total size exceeds the maximum allowed size of ${formatFileSize(maxSize)}.`;
-        errorDiv.style.display = 'block';
-        wrapButton.classList.remove('loading');
-        return;
-    }
-
-    const ttl = document.getElementById('ttl').value;
-    const detailsDiv = document.getElementById('wrapDetails');
-
-    let dataObj = {};
-
-    // Include text only if it's not empty
-    if (inputText.trim() !== '') {
-        dataObj.text = inputText;
-    }
-
-    if (uploadedFiles.length > 0) {
-        dataObj.files = uploadedFiles;
-    }
-
-    if (Object.keys(dataObj).length === 0) {
-        errorDiv.textContent = 'Please enter text or upload files to wrap.';
-        errorDiv.style.display = 'block';
-        wrapButton.classList.remove('loading');
-        return;
-    }
-
-    try {
-        const response = await fetch('/wrap', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ data: dataObj, ttl: ttl })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || 'Wrap request failed');
-        }
-
-        const data = await response.json();
-        
-        // Show the response container
-        document.getElementById('wrapResponseContainer').style.display = 'block';
-        
-        document.getElementById('wrappedToken').value = data.token;
-        const url = new URL(window.location.href);
-        url.searchParams.set('token', data.token);
-        document.getElementById('wrappedLink').value = url.toString();
-        
-        // Show token warning only after successful wrap
-        document.querySelector('.token-warning').style.display = 'flex';
-        
-        detailsDiv.className = 'info-box';
-        detailsDiv.innerHTML = `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
-        wrapSuccess.style.display = 'inline-flex';
-        setTimeout(() => {
-            wrapSuccess.style.display = 'none';
-        }, 3000);
-        // Reset uploaded files and clear file bubbles after wrapping
-        uploadedFiles = [];
-        document.getElementById('wrapFileBubbleContainer').innerHTML = '';
-        // Update size bar
-        updateSizeBar();
-    } catch (error) {
-        errorDiv.textContent = `Error: ${error.message}`;
-        errorDiv.style.display = 'block';
-        detailsDiv.textContent = '';
-        // Hide the response container on error
-        document.getElementById('wrapResponseContainer').style.display = 'none';
-    } finally {
-        wrapButton.classList.remove('loading');
-    }
-}
-
-async function unwrapData(token) {
-    const unwrapButton = document.getElementById('unwrapBtn');
-    const resultEditor = unwrapResultEditor;
-    const errorDiv = document.getElementById('unwrapError');
-    unwrapButton.classList.add('loading');
-    
-    // Clear previous states
-    errorDiv.style.display = 'none';
-    resultEditor.setValue('');
-    resultEditor.getWrapperElement().style.display = 'none';
-    
-    try {
-        const tokenToUnwrap = token || document.getElementById('unwrapInput').value;
-        const response = await fetch('/unwrap', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: tokenToUnwrap })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            if (response.status === 404) {
-                errorDiv.textContent = 'This token has already been used or does not exist. Tokens can only be unwrapped once and are permanently deleted after unwrapping.';
-            } else {
-                errorDiv.textContent = 'Error: ' + errorText;
-            }
-            errorDiv.style.display = 'block';
-            return;
-        }
-
-        const data = await response.json();
-        let contentAdded = false;
-        const fileBubbleContainer = document.getElementById('fileBubbleContainer');
-        fileBubbleContainer.innerHTML = '';
-
-        // Handle unwrapped data first
-        if (data.data) {
-            if (data.data.text) {
-                resultEditor.setValue(data.data.text);
-                resultEditor.getWrapperElement().style.display = 'block';
-                // Force CodeMirror to refresh and render properly
-                setTimeout(() => {
-                    resultEditor.refresh();
-                }, 1);
-                contentAdded = true;
-            }
-
-            if (data.data.files && Array.isArray(data.data.files)) {
-                const filesDiv = document.createElement('div');
-                filesDiv.className = 'info-box';
-                // Remove the title and line by removing this line:
-                // filesDiv.innerHTML = '<h3>Files</h3>';
-                fileBubbleContainer.appendChild(filesDiv);
-                
-                data.data.files.forEach(file => {
-                    const blob = base64ToBlob(file.data, file.type);
-                    const url = URL.createObjectURL(blob);
-
-                    const fileBubble = document.createElement('div');
-                    fileBubble.className = 'file-bubble';
-                    const fileSizeFormatted = formatFileSize(file.size);
-                    fileBubble.textContent = `📄 ${file.name} (${fileSizeFormatted})`;
-                    fileBubble.title = 'Click to download';
-
-                    fileBubble.addEventListener('click', () => {
-                        const downloadLink = document.createElement('a');
-                        downloadLink.href = url;
-                        downloadLink.download = file.name;
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
-                        URL.revokeObjectURL(url);
-                    });
-
-                    filesDiv.appendChild(fileBubble);
-                });
-                contentAdded = true;
-            }
-        }
-
-        // Display token info if available (after the content)
-        if (data.wrapping_info) {
-            const tokenInfoDiv = document.createElement('div');
-            tokenInfoDiv.className = 'info-box';
-            tokenInfoDiv.innerHTML = `<pre>${JSON.stringify(data.wrapping_info, null, 2)}</pre>`;
-            fileBubbleContainer.appendChild(tokenInfoDiv);
-        }
-
-        if (!contentAdded) {
-            errorDiv.textContent = 'No data found in the unwrapped content.';
-            errorDiv.style.display = 'block';
-        } else {
-            unwrapSuccess.style.display = 'inline-flex';
-            setTimeout(() => {
-                unwrapSuccess.style.display = 'none';
-            }, 3000);
-        }
-    } catch (error) {
-        console.error('Error during unwrapping:', error);
-        errorDiv.textContent = 'An error occurred while unwrapping the data.';
-        errorDiv.style.display = 'block';
-    } finally {
-        unwrapButton.classList.remove('loading');
-    }
-}
-
-// Helper function to convert Base64 to Blob
-function base64ToBlob(base64, type) {
-    const binary = atob(base64);
-    const array = [];
-    for (let i = 0; i < binary.length; i++) {
-        array.push(binary.charCodeAt(i));
-    }
-    return new Blob([new Uint8Array(array)], { type: type });
-}
-
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    const text = element.value;
-    navigator.clipboard.writeText(text).then(() => {
-        showCopiedBanner();
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-    });
-}
-
-function showCopiedBanner() {
-    const banner = document.getElementById('copiedBanner');
-    banner.classList.add('show');
-    setTimeout(() => {
-        banner.classList.remove('show');
-    }, 1500);
-}
-
-function toggleNightMode() {
-    document.body.classList.toggle('night-mode');
-    document.body.classList.toggle('light-mode');
-    
-    const isDark = document.body.classList.contains('night-mode');
-    const theme = isDark ? 'dracula' : 'default';
-    
-    wrapEditor.setOption('theme', theme);
-    unwrapResultEditor.setOption('theme', theme);
-
-    // Save preference in cookie
-    const mode = isDark ? 'dark' : 'light';
-    document.cookie = `theme=${mode};path=/;max-age=31536000`;
-}
-
-function setTTL(seconds) {
-    document.getElementById('ttl').value = seconds;
-}
-
-async function pasteToken() {
-    try {
-        const text = await navigator.clipboard.readText();
-        document.getElementById('unwrapInput').value = text.trim();
-    } catch (err) {
-        console.error('Failed to read clipboard:', err);
-    }
-}
-
-// On page load, check if a token is in the URL and unwrap it
-window.onload = function() {
-    // Check for theme preference in cookies
-    const cookies = document.cookie.split(';').reduce((accumulator, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        accumulator[key] = value;
-        return accumulator;
-    }, {});
-
-    if (cookies.theme === 'dark') {
-        document.body.classList.add('night-mode');
-        document.body.classList.remove('light-mode');
-        wrapEditor.setOption('theme', 'dracula');
-        unwrapResultEditor.setOption('theme', 'dracula');
-    } else {
-        // Default to light mode
-        document.body.classList.add('light-mode');
-        document.body.classList.remove('night-mode');
-        wrapEditor.setOption('theme', 'default');
-        unwrapResultEditor.setOption('theme', 'default');
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-        // Switch to unwrap tab
-        const unwrapTabBtn = document.querySelector('[data-tab="unwrap"]');
-        if (unwrapTabBtn) unwrapTabBtn.click();
-
-        document.getElementById('unwrapInput').value = token;
-        unwrapData(token);
-    }
-
-    // Initialize size bar
-    updateSizeBar();
-    
-    // Hide response container initially
-    document.getElementById('wrapResponseContainer').style.display = 'none';
+const state = {
+    files: [],
+    maxSize: DEFAULT_MAX_SIZE,
+    pendingReads: 0,
+    objectUrls: new Set(),
+    toastTimer: null
 };
 
-// ── Vault health ────────────────────────────────────────────────────────────
+let wrapEditor = null;
+let unwrapEditor = null;
 
-async function fetchVaultHealth() {
-    const dot   = document.getElementById('vaultStatusDot');
-    const panel = document.getElementById('vaultStatusPanel');
-    if (!dot || !panel) return;
+const elements = {
+    body: document.body,
+    themeToggle: document.getElementById("themeToggle"),
+    dropZone: document.getElementById("dropZone"),
+    attachButton: document.getElementById("attachButton"),
+    fileInput: document.getElementById("fileInput"),
+    attachmentList: document.getElementById("attachmentList"),
+    sizeLabel: document.getElementById("sizeLabel"),
+    sizeTrack: document.getElementById("sizeTrack"),
+    sizeBar: document.getElementById("sizeBar"),
+    ttl: document.getElementById("ttl"),
+    ttlPresets: document.getElementById("ttlPresets"),
+    wrapButton: document.getElementById("wrapButton"),
+    wrapError: document.getElementById("wrapError"),
+    wrapResult: document.getElementById("wrapResult"),
+    wrapDetails: document.getElementById("wrapDetails"),
+    wrappedToken: document.getElementById("wrappedToken"),
+    wrappedLink: document.getElementById("wrappedLink"),
+    unwrapInput: document.getElementById("unwrapInput"),
+    toggleTokenVisibility: document.getElementById("toggleTokenVisibility"),
+    pasteButton: document.getElementById("pasteButton"),
+    sharedTokenNotice: document.getElementById("sharedTokenNotice"),
+    unwrapButton: document.getElementById("unwrapButton"),
+    unwrapError: document.getElementById("unwrapError"),
+    unwrapResult: document.getElementById("unwrapResult"),
+    unwrappedTextBlock: document.getElementById("unwrappedTextBlock"),
+    downloadList: document.getElementById("downloadList"),
+    unwrapMetaDetails: document.getElementById("unwrapMetaDetails"),
+    unwrapDetails: document.getElementById("unwrapDetails"),
+    copyUnwrappedText: document.getElementById("copyUnwrappedText"),
+    toast: document.getElementById("toast"),
+    vaultStatus: document.getElementById("vaultStatus"),
+    vaultStatusDot: document.getElementById("vaultStatusDot"),
+    vaultStatusLabel: document.getElementById("vaultStatusLabel"),
+    vaultStatusPanel: document.getElementById("vaultStatusPanel"),
+    appVersion: document.getElementById("appVersion"),
+    githubLink: document.getElementById("githubLink")
+};
 
+function preferredTheme() {
     try {
-        const res  = await fetch('/api/health');
-        const data = await res.json();
-
-        dot.className = 'vault-status-dot ' + (data.status || 'unhealthy');
-
-        const rows = [
-            ['Status',      formatHealthStatus(data.status), healthValClass(data.status)],
-            ['Initialized', data.initialized ? 'Yes' : 'No', data.initialized ? 'ok'   : 'err'],
-            ['Sealed',      data.sealed      ? 'Yes' : 'No', data.sealed      ? 'err'  : 'ok'],
-            ['Standby',     data.standby     ? 'Yes' : 'No', data.standby     ? 'warn' : 'ok'],
-        ];
-        if (data.vault_version) rows.push(['Version', data.vault_version,  '']);
-        if (data.cluster_name)  rows.push(['Cluster', data.cluster_name,   '']);
-        if (data.message)       rows.push(['Info',    data.message,        'warn']);
-
-        panel.innerHTML =
-            `<div class="vault-status-panel-title">Vault Backend</div>` +
-            rows.map(([k, v, cls]) =>
-                `<div class="vault-status-row">` +
-                `<span class="vault-status-key">${k}</span>` +
-                `<span class="vault-status-val${cls ? ' ' + cls : ''}">${v}</span>` +
-                `</div>`
-            ).join('');
+        const saved = localStorage.getItem("vault-wrapper-theme");
+        if (saved === "dark" || saved === "light") return saved;
     } catch (_) {
-        dot.className = 'vault-status-dot unhealthy';
-        panel.innerHTML =
-            `<div class="vault-status-panel-title">Vault Backend</div>` +
-            `<div class="vault-status-row">` +
-            `<span class="vault-status-key">Status</span>` +
-            `<span class="vault-status-val err">Unreachable</span>` +
-            `</div>`;
+        // Storage can be unavailable in privacy modes; use the system setting.
+    }
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(theme) {
+    const isDark = theme === "dark";
+    elements.body.classList.toggle("dark-mode", isDark);
+    elements.themeToggle.setAttribute("aria-label", isDark ? "Use light theme" : "Use dark theme");
+    elements.themeToggle.title = isDark ? "Use light theme" : "Use dark theme";
+    wrapEditor?.setOption("theme", isDark ? "dracula" : "default");
+    unwrapEditor?.setOption("theme", isDark ? "dracula" : "default");
+}
+
+applyTheme(preferredTheme());
+
+wrapEditor = CodeMirror(document.getElementById("wrapInput"), {
+    lineNumbers: true,
+    lineWrapping: true,
+    mode: "javascript",
+    theme: elements.body.classList.contains("dark-mode") ? "dracula" : "default",
+    dragDrop: false,
+    placeholder: "Paste a password, configuration, note, or code snippet…"
+});
+
+unwrapEditor = CodeMirror(document.getElementById("unwrapEditor"), {
+    lineNumbers: true,
+    lineWrapping: true,
+    mode: "javascript",
+    theme: elements.body.classList.contains("dark-mode") ? "dracula" : "default",
+    readOnly: true
+});
+
+wrapEditor.getInputField().setAttribute("aria-label", "Secret text or code");
+wrapEditor.getInputField().setAttribute("autocomplete", "off");
+wrapEditor.getInputField().setAttribute("spellcheck", "false");
+unwrapEditor.getInputField().setAttribute("aria-label", "Unwrapped text content");
+
+function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB"];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / Math.pow(1024, index);
+    const digits = index === 0 ? 0 : value >= 10 ? 1 : 2;
+    return `${value.toFixed(digits)} ${units[index]}`;
+}
+
+function textSize() {
+    return new TextEncoder().encode(wrapEditor.getValue()).length;
+}
+
+function filesSize() {
+    return state.files.reduce((total, file) => total + file.size, 0);
+}
+
+function payloadSize() {
+    return textSize() + filesSize();
+}
+
+function updateSizeMeter() {
+    const size = payloadSize();
+    const percentage = Math.min(100, (size / state.maxSize) * 100 || 0);
+    elements.sizeLabel.textContent = `${formatBytes(size)} of ${formatBytes(state.maxSize)}`;
+    elements.sizeBar.style.width = `${percentage}%`;
+    elements.sizeTrack.setAttribute("aria-valuenow", String(Math.round(percentage)));
+    elements.sizeTrack.classList.toggle("warning", percentage >= 75 && percentage < 100);
+    elements.sizeTrack.classList.toggle("error", size > state.maxSize);
+}
+
+function fileIcon() {
+    const icon = document.createElement("span");
+    icon.className = "attachment-icon";
+    icon.textContent = "↥";
+    icon.setAttribute("aria-hidden", "true");
+    return icon;
+}
+
+function renderAttachments() {
+    elements.attachmentList.replaceChildren();
+    state.files.forEach((file, index) => {
+        const row = document.createElement("div");
+        row.className = "attachment-chip";
+        row.appendChild(fileIcon());
+
+        const name = document.createElement("span");
+        name.className = "attachment-name";
+        name.textContent = file.name;
+        name.title = file.name;
+        row.appendChild(name);
+
+        const size = document.createElement("span");
+        size.className = "attachment-size";
+        size.textContent = formatBytes(file.size);
+        row.appendChild(size);
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "remove-file";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Remove ${file.name}`);
+        remove.addEventListener("click", () => {
+            state.files.splice(index, 1);
+            renderAttachments();
+            updateSizeMeter();
+        });
+        row.appendChild(remove);
+        elements.attachmentList.appendChild(row);
+    });
+}
+
+function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const chunks = [];
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
+    }
+    return btoa(chunks.join(""));
+}
+
+let fileQueue = Promise.resolve();
+
+function queueFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    state.pendingReads += files.length;
+    fileQueue = fileQueue.then(async () => {
+        const skipped = [];
+        for (const file of files) {
+            const remaining = state.maxSize - payloadSize();
+            if (file.size > remaining) {
+                skipped.push(file.name);
+                state.pendingReads -= 1;
+                continue;
+            }
+            try {
+                const data = arrayBufferToBase64(await file.arrayBuffer());
+                state.files.push({
+                    isFile: true,
+                    name: file.name,
+                    type: file.type || "application/octet-stream",
+                    data,
+                    size: file.size
+                });
+            } catch (_) {
+                skipped.push(file.name);
+            } finally {
+                state.pendingReads -= 1;
+            }
+            renderAttachments();
+            updateSizeMeter();
+        }
+        if (skipped.length) {
+            showAlert(elements.wrapError, `Could not attach ${skipped.join(", ")}. The combined payload must stay under ${formatBytes(state.maxSize)}.`);
+        }
+    });
+}
+
+function showAlert(element, message) {
+    element.textContent = message;
+    element.hidden = false;
+}
+
+function clearAlert(element) {
+    element.textContent = "";
+    element.hidden = true;
+}
+
+function setBusy(button, busy, busyLabel) {
+    if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = button.querySelector("span")?.textContent || button.textContent;
+    }
+    button.disabled = busy;
+    button.classList.toggle("loading", busy);
+    button.setAttribute("aria-busy", String(busy));
+    const label = button.querySelector("span");
+    if (label) label.textContent = busy ? busyLabel : button.dataset.defaultLabel;
+}
+
+async function responseError(response, fallback) {
+    const message = (await response.text()).trim();
+    if (response.status === 413) return `The payload exceeds the ${formatBytes(state.maxSize)} limit.`;
+    if (response.status === 429) return "Too many requests. Wait a moment and try again.";
+    return message || fallback;
+}
+
+async function createSecret() {
+    clearAlert(elements.wrapError);
+    elements.wrapResult.hidden = true;
+
+    if (state.pendingReads > 0) {
+        showAlert(elements.wrapError, "Files are still being prepared. Try again in a moment.");
+        return;
+    }
+
+    const text = wrapEditor.getValue();
+    const size = payloadSize();
+    if (!text.trim() && state.files.length === 0) {
+        showAlert(elements.wrapError, "Add some text or at least one file before creating a link.");
+        return;
+    }
+    if (size > state.maxSize) {
+        showAlert(elements.wrapError, `The combined payload exceeds the ${formatBytes(state.maxSize)} limit.`);
+        return;
+    }
+
+    const ttl = Number.parseInt(elements.ttl.value, 10);
+    if (!Number.isSafeInteger(ttl) || ttl <= 0) {
+        showAlert(elements.wrapError, "Expiry must be a positive number of seconds.");
+        elements.ttl.focus();
+        return;
+    }
+
+    const data = {};
+    if (text.trim()) data.text = text;
+    if (state.files.length) data.files = state.files;
+
+    setBusy(elements.wrapButton, true, "Sealing secret…");
+    try {
+        const response = await fetch("/wrap", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data, ttl: String(ttl) })
+        });
+        if (!response.ok) throw new Error(await responseError(response, "Vault could not wrap the secret."));
+
+        const result = await response.json();
+        if (!result.token) throw new Error("Vault returned an incomplete wrapping response.");
+
+        const shareUrl = new URL(window.location.origin + window.location.pathname);
+        shareUrl.hash = new URLSearchParams({ token: result.token }).toString();
+        elements.wrappedToken.value = result.token;
+        elements.wrappedLink.value = shareUrl.toString();
+        elements.wrapDetails.textContent = JSON.stringify(result.details || {}, null, 2);
+        elements.wrapResult.hidden = false;
+
+        wrapEditor.setValue("");
+        state.files = [];
+        renderAttachments();
+        updateSizeMeter();
+        elements.wrapResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        showToast("Secure link created");
+    } catch (error) {
+        showAlert(elements.wrapError, error.message || "Could not create the secure link.");
+    } finally {
+        setBusy(elements.wrapButton, false, "");
     }
 }
 
-function formatHealthStatus(s) {
-    return { healthy: 'Healthy', standby: 'Standby', unhealthy: 'Unhealthy' }[s] || (s || 'Unknown');
+function revokeObjectUrls() {
+    state.objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    state.objectUrls.clear();
 }
 
-function healthValClass(s) {
-    return { healthy: 'ok', standby: 'warn', unhealthy: 'err' }[s] || 'err';
+function base64ToBlob(base64, type) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: type || "application/octet-stream" });
 }
 
-// ── Floating tooltips ────────────────────────────────────────────────────────
+function renderDownloads(files) {
+    revokeObjectUrls();
+    elements.downloadList.replaceChildren();
+    if (!Array.isArray(files)) return 0;
 
-function initTooltips() {
-    const tip = document.createElement('div');
-    tip.className = 'floating-tooltip';
-    document.body.appendChild(tip);
+    let rendered = 0;
+    files.forEach((file) => {
+        if (!file || typeof file.data !== "string") return;
+        try {
+            const url = URL.createObjectURL(base64ToBlob(file.data, file.type));
+            state.objectUrls.add(url);
+            const link = document.createElement("a");
+            link.className = "download-item";
+            link.href = url;
+            link.download = typeof file.name === "string" ? file.name : "download";
 
-    document.addEventListener('mouseenter', function(e) {
-        const target = e.target && e.target.closest && e.target.closest('[data-tooltip]');
-        if (!target) return;
-        const text = target.getAttribute('data-tooltip');
-        if (!text) return;
+            const icon = fileIcon();
+            icon.className = "download-icon";
+            icon.textContent = "↓";
+            link.appendChild(icon);
 
-        tip.textContent = text;
-        tip.classList.add('visible');
+            const name = document.createElement("span");
+            name.className = "download-name";
+            name.textContent = link.download;
+            link.appendChild(name);
 
-        const r = target.getBoundingClientRect();
-        // Position below the element; nudge left/right to stay in viewport
-        let top  = r.bottom + 8;
-        let left = r.left + r.width / 2;
-        // Clamp horizontally (approximate: tooltip width ≤ 240px)
-        left = Math.max(8 + 120, Math.min(left, window.innerWidth - 120 - 8));
-        // If below the fold, flip above
-        if (top + 40 > window.innerHeight) top = r.top - 40;
+            const size = document.createElement("span");
+            size.className = "download-size";
+            size.textContent = formatBytes(Number(file.size) || 0);
+            link.appendChild(size);
 
-        tip.style.left = left + 'px';
-        tip.style.top  = top  + 'px';
-    }, true);
-
-    document.addEventListener('mouseleave', function(e) {
-        if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-tooltip')) {
-            tip.classList.remove('visible');
+            const action = document.createElement("span");
+            action.className = "download-action";
+            action.textContent = "Download";
+            link.appendChild(action);
+            elements.downloadList.appendChild(link);
+            rendered += 1;
+        } catch (_) {
+            // A malformed attachment should not hide any valid text or files.
         }
-    }, true);
+    });
+    return rendered;
 }
 
-// Add this after the existing window.onload function
-window.addEventListener('DOMContentLoaded', () => {
-    // Hide token warning initially
-    document.querySelector('.token-warning').style.display = 'none';
+function clearSharedTokenFromAddress() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("token");
+    const hash = new URLSearchParams(url.hash.slice(1));
+    hash.delete("token");
+    url.hash = hash.toString();
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, "", next);
+}
 
-    // Fetch and display version
-    fetch('/api/version')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('appVersion').textContent = `v${data.version}`;
-            if (data.github_url) {
-                document.getElementById('githubLink').href = data.github_url;
-                document.getElementById('githubSection').style.display = 'inline';
-            }
-            if (data.max_request_size) {
-                maxSize = data.max_request_size;
-                updateSizeBar(); // Update size bar with new max size
-            }
-        })
-        .catch(err => console.error('Failed to fetch version:', err));
+async function openSecret() {
+    clearAlert(elements.unwrapError);
+    elements.unwrapResult.hidden = true;
+    const token = elements.unwrapInput.value.trim();
+    if (!token) {
+        showAlert(elements.unwrapError, "Paste a wrapped token before opening the secret.");
+        elements.unwrapInput.focus();
+        return;
+    }
 
-    // Tab switching logic
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            // Remove active class from all buttons and contents
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-            // Add active class to clicked button
-            button.classList.add('active');
-
-            // Show corresponding content
-            const tabId = button.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-
-            // Refresh CodeMirror instances
-            if (tabId === 'wrap') {
-                setTimeout(() => wrapEditor.refresh(), 10);
-            } else if (tabId === 'unwrap') {
-                setTimeout(() => unwrapResultEditor.refresh(), 10);
-            }
+    setBusy(elements.unwrapButton, true, "Opening secret…");
+    try {
+        const response = await fetch("/unwrap", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token })
         });
+        if (!response.ok) {
+            if (response.status === 404 || response.status === 410) {
+                throw new Error("This token is invalid, expired, or has already been used.");
+            }
+            throw new Error(await responseError(response, "Vault could not open the secret."));
+        }
+
+        const result = await response.json();
+        const payload = result.data && typeof result.data === "object" ? result.data : {};
+        const hasText = typeof payload.text === "string";
+        if (hasText) {
+            unwrapEditor.setValue(payload.text);
+            elements.unwrappedTextBlock.hidden = false;
+            setTimeout(() => unwrapEditor.refresh(), 0);
+        } else {
+            unwrapEditor.setValue("");
+            elements.unwrappedTextBlock.hidden = true;
+        }
+        const fileCount = renderDownloads(payload.files);
+        if (!hasText && fileCount === 0) throw new Error("The retrieved secret did not contain readable data.");
+
+        if (result.wrapping_info) {
+            elements.unwrapDetails.textContent = JSON.stringify(result.wrapping_info, null, 2);
+            elements.unwrapMetaDetails.hidden = false;
+        } else {
+            elements.unwrapDetails.textContent = "";
+            elements.unwrapMetaDetails.hidden = true;
+        }
+
+        elements.unwrapInput.value = "";
+        elements.sharedTokenNotice.hidden = true;
+        elements.unwrapResult.hidden = false;
+        clearSharedTokenFromAddress();
+        elements.unwrapResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        showToast("Secret opened — token consumed");
+    } catch (error) {
+        showAlert(elements.unwrapError, error.message || "Could not open the secret.");
+    } finally {
+        setBusy(elements.unwrapButton, false, "");
+    }
+}
+
+function selectTab(panelId, focus = false) {
+    const buttons = Array.from(document.querySelectorAll("[role=tab]"));
+    buttons.forEach((button) => {
+        const selected = button.dataset.tab === panelId;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+        const panel = document.getElementById(button.dataset.tab);
+        panel.hidden = !selected;
+        panel.classList.toggle("active", selected);
+        if (selected && focus) button.focus();
     });
+    if (panelId === "wrapPanel") setTimeout(() => wrapEditor.refresh(), 0);
+    if (panelId === "unwrapPanel") setTimeout(() => unwrapEditor.refresh(), 0);
+}
 
-    // Vault health: initial check + poll every 30 s
-    fetchVaultHealth();
-    setInterval(fetchVaultHealth, 30000);
+function sharedTokenFromUrl() {
+    const url = new URL(window.location.href);
+    const fragmentToken = new URLSearchParams(url.hash.slice(1)).get("token");
+    const legacyToken = url.searchParams.get("token");
+    const token = fragmentToken || legacyToken;
+    if (legacyToken) {
+        url.searchParams.delete("token");
+        url.hash = new URLSearchParams({ token: legacyToken }).toString();
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+    return token;
+}
 
-    // Styled tooltips
-    initTooltips();
+async function copyText(text, message = "Copied to clipboard") {
+    if (!text) return;
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (_) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        textarea.remove();
+        if (!copied) throw new Error("Clipboard is unavailable");
+    }
+    showToast(message);
+}
+
+function showToast(message) {
+    window.clearTimeout(state.toastTimer);
+    elements.toast.textContent = message;
+    elements.toast.classList.add("show");
+    state.toastTimer = window.setTimeout(() => elements.toast.classList.remove("show"), 1800);
+}
+
+function statusRow(label, value) {
+    const row = document.createElement("div");
+    row.className = "status-row";
+    const key = document.createElement("span");
+    key.textContent = label;
+    const val = document.createElement("strong");
+    val.textContent = value;
+    row.append(key, val);
+    return row;
+}
+
+function renderVaultStatus(data) {
+    const status = ["healthy", "standby", "unhealthy"].includes(data.status) ? data.status : "unhealthy";
+    const labels = { healthy: "Vault online", standby: "Vault standby", unhealthy: "Vault unavailable" };
+    elements.vaultStatusDot.className = `status-dot ${status}`;
+    elements.vaultStatusLabel.textContent = labels[status];
+    const title = document.createElement("div");
+    title.className = "status-popover-title";
+    title.textContent = "Vault backend";
+    const rows = [
+        statusRow("Status", labels[status].replace("Vault ", "")),
+        statusRow("Initialized", data.initialized ? "Yes" : "No"),
+        statusRow("Sealed", data.sealed ? "Yes" : "No")
+    ];
+    if (data.vault_version) rows.push(statusRow("Version", data.vault_version));
+    if (data.cluster_name) rows.push(statusRow("Cluster", data.cluster_name));
+    elements.vaultStatusPanel.replaceChildren(title, ...rows);
+}
+
+async function fetchVaultHealth() {
+    try {
+        const response = await fetch("/api/health", { cache: "no-store", credentials: "same-origin" });
+        const data = await response.json();
+        renderVaultStatus(data);
+    } catch (_) {
+        renderVaultStatus({ status: "unhealthy", initialized: false, sealed: false });
+    }
+}
+
+async function fetchAppInfo() {
+    try {
+        const response = await fetch("/api/version", { cache: "no-store", credentials: "same-origin" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.version) {
+            elements.appVersion.textContent = `v${data.version}`;
+            elements.appVersion.title = `Vault Wrapper ${data.version}`;
+        }
+        const configuredMax = Number(data.max_payload_size || data.max_request_size);
+        if (Number.isFinite(configuredMax) && configuredMax > 0) {
+            state.maxSize = configuredMax;
+            updateSizeMeter();
+        }
+        if (data.github_url) {
+            elements.githubLink.href = data.github_url;
+        }
+    } catch (_) {
+        // Version information is non-essential.
+    }
+}
+
+elements.themeToggle.addEventListener("click", () => {
+    const next = elements.body.classList.contains("dark-mode") ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("vault-wrapper-theme", next); } catch (_) { /* optional */ }
 });
+
+document.querySelectorAll("[role=tab]").forEach((button) => {
+    button.addEventListener("click", () => selectTab(button.dataset.tab));
+    button.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        const next = button.id === "wrapTab" ? "unwrapPanel" : "wrapPanel";
+        selectTab(next, true);
+    });
+});
+
+elements.attachButton.addEventListener("click", () => elements.fileInput.click());
+elements.fileInput.addEventListener("change", () => {
+    queueFiles(elements.fileInput.files);
+    elements.fileInput.value = "";
+});
+
+let dragDepth = 0;
+elements.dropZone.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    dragDepth += 1;
+    elements.dropZone.classList.add("dragover");
+});
+elements.dropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+});
+elements.dropZone.addEventListener("dragleave", (event) => {
+    event.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) elements.dropZone.classList.remove("dragover");
+});
+elements.dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dragDepth = 0;
+    elements.dropZone.classList.remove("dragover");
+    queueFiles(event.dataTransfer?.files);
+});
+
+wrapEditor.on("change", updateSizeMeter);
+wrapEditor.on("drop", (_, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    queueFiles(event.dataTransfer?.files);
+});
+
+elements.ttlPresets.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-seconds]");
+    if (!button) return;
+    elements.ttl.value = button.dataset.seconds;
+    elements.ttlPresets.querySelectorAll("button").forEach((preset) => preset.classList.toggle("active", preset === button));
+});
+elements.ttl.addEventListener("input", () => {
+    elements.ttlPresets.querySelectorAll("button").forEach((preset) => preset.classList.toggle("active", preset.dataset.seconds === elements.ttl.value));
+});
+
+elements.wrapButton.addEventListener("click", createSecret);
+elements.unwrapButton.addEventListener("click", openSecret);
+elements.pasteButton.addEventListener("click", async () => {
+    try {
+        elements.unwrapInput.value = (await navigator.clipboard.readText()).trim();
+        elements.unwrapInput.focus();
+    } catch (_) {
+        showAlert(elements.unwrapError, "Clipboard access is blocked. Paste the token into the field manually.");
+    }
+});
+elements.toggleTokenVisibility.addEventListener("click", () => {
+    const show = elements.unwrapInput.type === "password";
+    elements.unwrapInput.type = show ? "text" : "password";
+    elements.toggleTokenVisibility.setAttribute("aria-label", show ? "Hide token" : "Show token");
+    elements.toggleTokenVisibility.title = show ? "Hide token" : "Show token";
+});
+elements.copyUnwrappedText.addEventListener("click", () => copyText(unwrapEditor.getValue(), "Text copied"));
+document.querySelectorAll("[data-copy]").forEach((button) => {
+    button.addEventListener("click", () => copyText(document.getElementById(button.dataset.copy).value));
+});
+
+document.addEventListener("click", (event) => {
+    if (elements.vaultStatus.open && !elements.vaultStatus.contains(event.target)) elements.vaultStatus.open = false;
+});
+window.addEventListener("beforeunload", revokeObjectUrls);
+
+function loadSharedToken() {
+    const incomingToken = sharedTokenFromUrl();
+    if (!incomingToken) return;
+    elements.unwrapInput.value = incomingToken;
+    elements.sharedTokenNotice.hidden = false;
+    selectTab("unwrapPanel");
+    setTimeout(() => elements.unwrapButton.focus(), 0);
+}
+
+window.addEventListener("hashchange", loadSharedToken);
+loadSharedToken();
+updateSizeMeter();
+fetchAppInfo();
+fetchVaultHealth();
+window.setInterval(fetchVaultHealth, 30000);
