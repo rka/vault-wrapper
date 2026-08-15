@@ -17,6 +17,7 @@ const (
 	// Encoded chunks are 256 KiB, safely below Vault's default 1 MiB
 	// max_json_string_value_length while keeping the envelope compact.
 	vaultPayloadChunkSize = 192 * 1024
+	vaultOperationTimeout = 30 * time.Second
 )
 
 type vaultPayloadEnvelope struct {
@@ -64,7 +65,7 @@ func wrapData(data string, ttl string, receiptID string) (string, *api.SecretWra
 		return "", nil, fmt.Errorf("wrapData: invalid TTL %q: %w", ttl, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), vaultOperationTimeout)
 	defer cancel()
 
 	req := vaultClient.NewRequest("POST", "/v1/sys/wrapping/wrap")
@@ -153,7 +154,7 @@ func unwrapData(token string) (map[string]interface{}, error) {
 	}
 	c.SetToken(token)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), vaultOperationTimeout)
 	defer cancel()
 
 	secret, err := c.Logical().UnwrapWithContext(ctx, "")

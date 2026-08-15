@@ -9,7 +9,7 @@ Vault Data Wrapper is a web application that leverages HashiCorp Vault's wrappin
 *   **✨ Responsive Interface:** Provides a focused create/open workflow with syntax highlighting, keyboard-accessible controls, and light/dark themes.
 *   **🎨 Persistent Theme:** Remembers user's preferred theme (light/dark) across sessions.
 *   **📋 Clipboard Integration:** Simplifies copying tokens and URLs.
-*   **📁 File Upload Support:** Allows a combined decoded payload of up to 5MB by default.
+*   **📁 File Upload Support:** Allows a combined decoded payload of up to 17 MiB by default.
 *   **📡 Live Retrieval Receipts:** Keeps links created in the current tab visible and updates them through Server-Sent Events when they are retrieved or expire.
 
 ## Getting Started
@@ -50,7 +50,7 @@ Vault Data Wrapper is a web application that leverages HashiCorp Vault's wrappin
 
 *   **Vault Address:** `http://vault:8200` (configurable via `VAULT_ADDR` environment variable)
 *   **Vault Token:** `root` (configurable via `VAULT_TOKEN` environment variable - **Use a secure token in production!**)
-*   **Payload Limit:** `5242880` bytes (configurable via `MAX_REQUEST_SIZE`)
+*   **Payload Limit:** `17825792` bytes / 17 MiB (configurable via `MAX_REQUEST_SIZE`). The default is the highest whole-MiB decoded payload that safely fits Vault's default 32 MiB request limit after worst-case file and envelope encoding.
 *   **Proxy Headers:** Set `TRUST_PROXY_HEADERS=true` only when the app is reachable exclusively through a trusted reverse proxy.
 
 ### Usage

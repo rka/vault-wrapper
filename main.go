@@ -17,7 +17,7 @@ import (
 // Version is set during build
 var Version = "dev"
 var GithubURL = "https://github.com/rka/vault-wrapper"
-var MaxRequestSize int64 = 5 * 1024 * 1024 // Maximum decoded payload size; default 5 MB.
+var MaxRequestSize int64 = 17 * 1024 * 1024 // Maximum decoded payload size; safely fits Vault's default 32 MiB request cap.
 var TrustProxyHeaders bool
 
 var requestCounter uint64
@@ -157,8 +157,8 @@ func main() {
 		Addr:              ":3001",
 		Handler:           securityHeadersMiddleware(mux),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       20 * time.Second,
-		WriteTimeout:      20 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
