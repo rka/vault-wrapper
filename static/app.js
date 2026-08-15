@@ -37,12 +37,15 @@ const elements = {
     sharedTokenNotice: document.getElementById("sharedTokenNotice"),
     unwrapButton: document.getElementById("unwrapButton"),
     unwrapError: document.getElementById("unwrapError"),
+    unwrapPanel: document.getElementById("unwrapPanel"),
     unwrapResult: document.getElementById("unwrapResult"),
+    openedResultTitle: document.getElementById("openedResultTitle"),
     unwrappedTextBlock: document.getElementById("unwrappedTextBlock"),
     downloadList: document.getElementById("downloadList"),
     unwrapMetaDetails: document.getElementById("unwrapMetaDetails"),
     unwrapDetails: document.getElementById("unwrapDetails"),
     copyUnwrappedText: document.getElementById("copyUnwrappedText"),
+    openAnotherButton: document.getElementById("openAnotherButton"),
     toast: document.getElementById("toast"),
     vaultStatus: document.getElementById("vaultStatus"),
     vaultStatusDot: document.getElementById("vaultStatusDot"),
@@ -83,9 +86,9 @@ wrapEditor = CodeMirror(document.getElementById("wrapInput"), {
 });
 
 unwrapEditor = CodeMirror(document.getElementById("unwrapEditor"), {
-    lineNumbers: true,
+    lineNumbers: false,
     lineWrapping: true,
-    mode: "javascript",
+    mode: null,
     theme: elements.body.classList.contains("dark-mode") ? "dracula" : "default",
     readOnly: true
 });
@@ -373,6 +376,25 @@ function clearSharedTokenFromAddress() {
     window.history.replaceState(null, "", next);
 }
 
+function resetOpenedSecret(focusInput = true) {
+    elements.body.classList.remove("showing-opened-secret");
+    elements.unwrapPanel.classList.remove("has-opened-secret");
+    elements.unwrapResult.hidden = true;
+    elements.unwrappedTextBlock.hidden = true;
+    elements.unwrapMetaDetails.hidden = true;
+    elements.unwrapMetaDetails.open = false;
+    elements.unwrapDetails.textContent = "";
+    elements.unwrapInput.value = "";
+    elements.unwrapInput.type = "password";
+    elements.toggleTokenVisibility.setAttribute("aria-label", "Show token");
+    elements.toggleTokenVisibility.title = "Show token";
+    elements.sharedTokenNotice.hidden = true;
+    unwrapEditor.setValue("");
+    renderDownloads([]);
+    clearAlert(elements.unwrapError);
+    if (focusInput) setTimeout(() => elements.unwrapInput.focus(), 0);
+}
+
 async function openSecret() {
     clearAlert(elements.unwrapError);
     elements.unwrapResult.hidden = true;
@@ -422,9 +444,12 @@ async function openSecret() {
 
         elements.unwrapInput.value = "";
         elements.sharedTokenNotice.hidden = true;
+        elements.body.classList.add("showing-opened-secret");
+        elements.unwrapPanel.classList.add("has-opened-secret");
         elements.unwrapResult.hidden = false;
         clearSharedTokenFromAddress();
         elements.unwrapResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        elements.openedResultTitle.focus({ preventScroll: true });
         showToast("Secret opened — token consumed");
     } catch (error) {
         showAlert(elements.unwrapError, error.message || "Could not open the secret.");
@@ -445,6 +470,10 @@ function selectTab(panelId, focus = false) {
         panel.classList.toggle("active", selected);
         if (selected && focus) button.focus();
     });
+    elements.body.classList.toggle(
+        "showing-opened-secret",
+        panelId === "unwrapPanel" && elements.unwrapPanel.classList.contains("has-opened-secret")
+    );
     if (panelId === "wrapPanel") setTimeout(() => wrapEditor.refresh(), 0);
     if (panelId === "unwrapPanel") setTimeout(() => unwrapEditor.refresh(), 0);
 }
@@ -627,6 +656,7 @@ elements.toggleTokenVisibility.addEventListener("click", () => {
     elements.toggleTokenVisibility.title = show ? "Hide token" : "Show token";
 });
 elements.copyUnwrappedText.addEventListener("click", () => copyText(unwrapEditor.getValue(), "Text copied"));
+elements.openAnotherButton.addEventListener("click", () => resetOpenedSecret());
 document.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", () => copyText(document.getElementById(button.dataset.copy).value));
 });
@@ -639,6 +669,7 @@ window.addEventListener("beforeunload", revokeObjectUrls);
 function loadSharedToken() {
     const incomingToken = sharedTokenFromUrl();
     if (!incomingToken) return;
+    resetOpenedSecret(false);
     elements.unwrapInput.value = incomingToken;
     elements.sharedTokenNotice.hidden = false;
     selectTab("unwrapPanel");
