@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -205,8 +206,22 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var receiptID, senderSession string
+	var newSenderSession bool
+	if r.Header.Get("X-Receipt-Tracking") == "sse" {
+		senderSession, newSenderSession, err = senderSessionForWrap(r)
+		if err == nil {
+			receiptID, err = newOpaqueID()
+		}
+		if err != nil {
+			log.Printf("ERROR [%s] wrap: could not initialize receipt tracking: %v", reqID(r), err)
+			http.Error(w, "Could not initialize live receipt tracking", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	log.Printf("INFO  [%s] wrap: payload_size=%d ttl=%s ip=%s", reqID(r), payloadSize, input.TTL, getClientIP(r))
-	token, details, err := wrapData(string(dataBytes), input.TTL)
+	token, details, err := wrapData(string(dataBytes), input.TTL, receiptID)
 	if err != nil {
 		log.Printf("ERROR [%s] wrap: wrapData failed: %v", reqID(r), err)
 		http.Error(w, "Vault could not wrap the payload", http.StatusBadGateway)
@@ -214,14 +229,30 @@ func wrapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("INFO  [%s] wrap: success token=%s", reqID(r), maskToken(token))
-	receipt := map[string]any{
+	vaultReceipt := map[string]any{
 		"accessor":         details.Accessor,
 		"ttl":              details.TTL,
 		"creation_time":    details.CreationTime,
 		"creation_path":    details.CreationPath,
 		"wrapped_accessor": details.WrappedAccessor,
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"token": token, "details": receipt})
+	response := map[string]any{"token": token, "details": vaultReceipt}
+	if receiptID != "" {
+		expiresAt := time.Now().Add(time.Duration(ttlValue) * time.Second)
+		if !details.CreationTime.IsZero() && details.TTL > 0 {
+			expiresAt = details.CreationTime.Add(time.Duration(details.TTL) * time.Second)
+		}
+		receipt, tracked := liveReceipts.add(senderSession, receiptID, expiresAt)
+		if tracked {
+			response["receipt"] = receipt
+		} else {
+			log.Printf("WARN  [%s] wrap: receipt tracking capacity reached", reqID(r))
+		}
+		if tracked && newSenderSession {
+			setSenderSessionCookie(w, r, senderSession)
+		}
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 func parseTTL(value string) (int, error) {
@@ -274,12 +305,13 @@ func unwrapHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataString, err := decodeVaultPayload(dataMap["data"])
+	dataString, receiptID, err := decodeVaultPayload(dataMap["data"])
 	if err != nil {
 		log.Printf("ERROR [%s] unwrap: unexpected data shape: %v", reqID(r), err)
 		http.Error(w, "Vault returned an unexpected payload", http.StatusBadGateway)
 		return
 	}
+	liveReceipts.markRetrieved(receiptID)
 	var data wrapPayload
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
 		log.Printf("ERROR [%s] unwrap: failed to unmarshal payload: %v", reqID(r), err)

@@ -66,6 +66,18 @@ func (sr *statusRecorder) WriteHeader(code int) {
 	sr.ResponseWriter.WriteHeader(code)
 }
 
+// Unwrap lets http.ResponseController reach the original writer for SSE
+// deadline management while preserving request status logging.
+func (sr *statusRecorder) Unwrap() http.ResponseWriter {
+	return sr.ResponseWriter
+}
+
+func (sr *statusRecorder) Flush() {
+	if flusher, ok := sr.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 func loggingMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := nextReqID()
@@ -134,6 +146,7 @@ func main() {
 		rateLimitMiddleware(unwrapHandler, unwrapRate, 10, "unwrap")))
 	mux.HandleFunc("/api/version", loggingMiddleware(versionHandler))
 	mux.HandleFunc("/api/health", loggingMiddleware(vaultHealthHandler))
+	mux.HandleFunc("/api/events", loggingMiddleware(receiptEventsHandler))
 
 	// Serve static files (no logging middleware — high frequency, low value)
 	fs := http.FileServer(http.Dir("./static"))

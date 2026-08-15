@@ -10,6 +10,7 @@ Vault Data Wrapper is a web application that leverages HashiCorp Vault's wrappin
 *   **🎨 Persistent Theme:** Remembers user's preferred theme (light/dark) across sessions.
 *   **📋 Clipboard Integration:** Simplifies copying tokens and URLs.
 *   **📁 File Upload Support:** Allows a combined decoded payload of up to 5MB by default.
+*   **📡 Live Retrieval Receipts:** Keeps links created in the current tab visible and updates them through Server-Sent Events when they are retrieved or expire.
 
 ## Getting Started
 
@@ -56,6 +57,8 @@ Vault Data Wrapper is a web application that leverages HashiCorp Vault's wrappin
 
 1.  **Wrap Data:** Enter text/code or upload files, set TTL, and click "Wrap". Copy the generated token or shareable link.
 2.  **Unwrap Data:** Open the shareable link or paste the token, review the one-time-use warning, and explicitly confirm retrieval. Loading a link does not consume its token.
+
+Browser-created links remain in an in-memory activity list while the sender tab stays open. Receipt state is anonymous and best-effort: it records only an opaque receipt ID, sender session, expiry, and status; it does not store the secret, wrapping token, recipient identity, IP address, or user agent. Status history is lost when the application instance restarts.
 
 ## CLI Usage
 

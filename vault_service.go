@@ -20,8 +20,9 @@ const (
 )
 
 type vaultPayloadEnvelope struct {
-	Format string   `json:"format"`
-	Chunks []string `json:"chunks"`
+	Format    string   `json:"format"`
+	Chunks    []string `json:"chunks"`
+	ReceiptID string   `json:"receipt_id,omitempty"`
 }
 
 var (
@@ -57,7 +58,7 @@ func initVaultClient() error {
 	return nil
 }
 
-func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
+func wrapData(data string, ttl string, receiptID string) (string, *api.SecretWrapInfo, error) {
 	// Validate TTL is a parseable duration.
 	if _, err := time.ParseDuration(ttl + "s"); err != nil {
 		return "", nil, fmt.Errorf("wrapData: invalid TTL %q: %w", ttl, err)
@@ -68,7 +69,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 
 	req := vaultClient.NewRequest("POST", "/v1/sys/wrapping/wrap")
 	req.WrapTTL = ttl + "s"
-	if err := req.SetJSONBody(map[string]interface{}{"data": encodeVaultPayload(data)}); err != nil {
+	if err := req.SetJSONBody(map[string]interface{}{"data": encodeVaultPayload(data, receiptID)}); err != nil {
 		return "", nil, fmt.Errorf("wrapData: failed to set request body: %w", err)
 	}
 
@@ -89,7 +90,7 @@ func wrapData(data string, ttl string) (string, *api.SecretWrapInfo, error) {
 	return secret.WrapInfo.Token, secret.WrapInfo, nil
 }
 
-func encodeVaultPayload(data string) vaultPayloadEnvelope {
+func encodeVaultPayload(data string, receiptID string) vaultPayloadEnvelope {
 	chunks := make([]string, 0, (len(data)+vaultPayloadChunkSize-1)/vaultPayloadChunkSize)
 	for start := 0; start < len(data); start += vaultPayloadChunkSize {
 		end := min(start+vaultPayloadChunkSize, len(data))
@@ -98,45 +99,49 @@ func encodeVaultPayload(data string) vaultPayloadEnvelope {
 	if len(chunks) == 0 {
 		chunks = append(chunks, "")
 	}
-	return vaultPayloadEnvelope{Format: vaultEnvelopeFormat, Chunks: chunks}
+	return vaultPayloadEnvelope{Format: vaultEnvelopeFormat, Chunks: chunks, ReceiptID: receiptID}
 }
 
 // decodeVaultPayload accepts the chunked envelope as well as the legacy plain
 // string so links created by older versions remain usable.
-func decodeVaultPayload(value interface{}) (string, error) {
+func decodeVaultPayload(value interface{}) (string, string, error) {
 	if legacy, ok := value.(string); ok {
-		return legacy, nil
+		return legacy, "", nil
 	}
 
 	envelope, ok := value.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("unexpected payload type %T", value)
+		return "", "", fmt.Errorf("unexpected payload type %T", value)
 	}
 	format, ok := envelope["format"].(string)
 	if !ok || format != vaultEnvelopeFormat {
-		return "", fmt.Errorf("unsupported payload envelope")
+		return "", "", fmt.Errorf("unsupported payload envelope")
 	}
 	rawChunks, ok := envelope["chunks"].([]interface{})
 	if !ok || len(rawChunks) == 0 {
-		return "", fmt.Errorf("payload envelope has no chunks")
+		return "", "", fmt.Errorf("payload envelope has no chunks")
+	}
+	receiptID, _ := envelope["receipt_id"].(string)
+	if receiptID != "" && !validOpaqueID(receiptID) {
+		return "", "", fmt.Errorf("payload envelope has an invalid receipt")
 	}
 
 	var decoded strings.Builder
 	for i, rawChunk := range rawChunks {
 		chunk, ok := rawChunk.(string)
 		if !ok {
-			return "", fmt.Errorf("payload chunk %d is not a string", i)
+			return "", "", fmt.Errorf("payload chunk %d is not a string", i)
 		}
 		part, err := base64.StdEncoding.DecodeString(chunk)
 		if err != nil {
-			return "", fmt.Errorf("decode payload chunk %d: %w", i, err)
+			return "", "", fmt.Errorf("decode payload chunk %d: %w", i, err)
 		}
 		if int64(decoded.Len()+len(part)) > requestBodyLimit() {
-			return "", fmt.Errorf("decoded payload exceeds the request limit")
+			return "", "", fmt.Errorf("decoded payload exceeds the request limit")
 		}
 		decoded.Write(part)
 	}
-	return decoded.String(), nil
+	return decoded.String(), receiptID, nil
 }
 
 func unwrapData(token string) (map[string]interface{}, error) {

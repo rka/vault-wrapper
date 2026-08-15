@@ -105,14 +105,12 @@
                         </aside>
                     </div>
 
-                    <section id="wrapResult" class="result-card" aria-labelledby="wrapResultTitle" hidden>
-                        <div class="result-header"><span class="success-icon"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 10 3.2 3.2L15.5 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><span class="step-label">Ready to share</span><h2 id="wrapResultTitle">Your one-time link is sealed</h2></div></div>
-                        <p class="result-intro">Send the link through a trusted channel. Anyone with it can consume the secret once.</p>
-                        <div class="copy-grid">
-                            <label class="copy-field"><span>Shareable link</span><span class="copy-control"><input id="wrappedLink" type="text" readonly spellcheck="false"><button type="button" data-copy="wrappedLink">Copy link</button></span></label>
-                            <label class="copy-field"><span>Raw token</span><span class="copy-control"><input id="wrappedToken" type="text" readonly spellcheck="false"><button type="button" data-copy="wrappedToken">Copy token</button></span></label>
+                    <section id="wrapResult" class="share-outbox" aria-labelledby="wrapResultTitle" hidden>
+                        <div class="outbox-header">
+                            <div><span class="step-label">Created this session</span><h2 id="wrapResultTitle">Your shared links</h2><p>Keep this tab open to see when a one-time link is retrieved.</p></div>
+                            <span id="liveReceiptState" class="live-receipt-state" data-state="connecting"><span aria-hidden="true"></span><span id="liveReceiptLabel">Connecting</span></span>
                         </div>
-                        <details class="technical-details"><summary>Vault receipt <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><pre id="wrapDetails"></pre></details>
+                        <div id="shareList" class="share-list" aria-live="polite"></div>
                     </section>
                 </div>
 

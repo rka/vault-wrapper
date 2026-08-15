@@ -7,7 +7,9 @@ const state = {
     maxSize: DEFAULT_MAX_SIZE,
     pendingReads: 0,
     objectUrls: new Set(),
-    toastTimer: null
+    toastTimer: null,
+    shares: new Map(),
+    receiptSource: null
 };
 
 let wrapEditor = null;
@@ -28,9 +30,9 @@ const elements = {
     wrapButton: document.getElementById("wrapButton"),
     wrapError: document.getElementById("wrapError"),
     wrapResult: document.getElementById("wrapResult"),
-    wrapDetails: document.getElementById("wrapDetails"),
-    wrappedToken: document.getElementById("wrappedToken"),
-    wrappedLink: document.getElementById("wrappedLink"),
+    shareList: document.getElementById("shareList"),
+    liveReceiptState: document.getElementById("liveReceiptState"),
+    liveReceiptLabel: document.getElementById("liveReceiptLabel"),
     unwrapInput: document.getElementById("unwrapInput"),
     toggleTokenVisibility: document.getElementById("toggleTokenVisibility"),
     pasteButton: document.getElementById("pasteButton"),
@@ -246,9 +248,174 @@ async function responseError(response, fallback) {
     return message || fallback;
 }
 
+function setLiveReceiptState(label, status) {
+    elements.liveReceiptLabel.textContent = label;
+    elements.liveReceiptState.dataset.state = status;
+}
+
+function shareStatusLabel(status) {
+    if (status === "retrieved") return "Retrieved";
+    if (status === "expired") return "Expired";
+    if (status === "untracked") return "Status unavailable";
+    return "Waiting for retrieval";
+}
+
+function remainingTime(expiresAt) {
+    const seconds = Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.ceil(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.ceil(minutes / 60);
+    if (hours < 48) return `${hours}h`;
+    return `${Math.ceil(hours / 24)}d`;
+}
+
+function maybeCloseReceiptStream() {
+    const hasWaiting = Array.from(state.shares.values()).some((share) => share.status === "waiting");
+    if (hasWaiting || !state.receiptSource) return;
+    state.receiptSource.close();
+    state.receiptSource = null;
+    setLiveReceiptState("Updates complete", "idle");
+}
+
+function updateShareStatus(receiptID, status, expiresAt) {
+    const share = state.shares.get(receiptID);
+    if (!share) return;
+    const previousStatus = share.status;
+    if (expiresAt) share.expiresAt = new Date(expiresAt);
+    share.status = status;
+    share.card.dataset.status = status;
+    share.statusNode.textContent = shareStatusLabel(status);
+    if (status === "retrieved") share.headingNode.textContent = "Secret retrieved";
+    else if (status === "expired") share.headingNode.textContent = "Link expired";
+    else share.headingNode.textContent = "Ready to share";
+    const settled = status === "retrieved" || status === "expired";
+    share.copyButtons.forEach((button) => { button.disabled = settled; });
+    share.card.querySelectorAll("input").forEach((input) => { input.disabled = settled; });
+    if (status === "retrieved" && previousStatus !== "retrieved") showToast("A shared secret was retrieved");
+    maybeCloseReceiptStream();
+}
+
+function ensureReceiptStream() {
+    if (state.receiptSource) return;
+    if (!window.EventSource) {
+        setLiveReceiptState("Updates unavailable", "error");
+        return;
+    }
+    setLiveReceiptState("Connecting", "connecting");
+    const source = new EventSource("/api/events");
+    state.receiptSource = source;
+    source.addEventListener("open", () => setLiveReceiptState("Live updates", "connected"));
+    source.addEventListener("receipt", (event) => {
+        try {
+            const update = JSON.parse(event.data);
+            if (typeof update.id === "string" && typeof update.status === "string") {
+                updateShareStatus(update.id, update.status, update.expires_at);
+            }
+        } catch (_) {
+            // Ignore malformed stream events and wait for the next snapshot.
+        }
+    });
+    source.addEventListener("error", () => {
+        if (state.receiptSource === source) setLiveReceiptState("Reconnecting", "connecting");
+    });
+}
+
+function makeCopyField(label, value, actionLabel) {
+    const field = document.createElement("label");
+    field.className = "copy-field";
+    const title = document.createElement("span");
+    title.textContent = label;
+    const control = document.createElement("span");
+    control.className = "copy-control";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.readOnly = true;
+    input.spellcheck = false;
+    input.value = value;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = actionLabel;
+    button.addEventListener("click", () => copyText(value, `${label} copied`));
+    control.append(input, button);
+    field.append(title, control);
+    return { field, button };
+}
+
+function addShare(result, shareUrl, ttl) {
+    const receipt = result.receipt && typeof result.receipt === "object" ? result.receipt : null;
+    const receiptID = typeof receipt?.id === "string" ? receipt.id : `untracked-${Date.now()}`;
+    const expiresAt = receipt?.expires_at ? new Date(receipt.expires_at) : new Date(Date.now() + ttl * 1000);
+    const status = receipt ? String(receipt.status || "waiting") : "untracked";
+
+    const card = document.createElement("article");
+    card.className = "share-card";
+    card.dataset.status = status;
+
+    const header = document.createElement("div");
+    header.className = "share-card-header";
+    const title = document.createElement("div");
+    const kicker = document.createElement("span");
+    kicker.className = "share-kicker";
+    kicker.textContent = "One-time link";
+    const heading = document.createElement("h3");
+    heading.textContent = "Ready to share";
+    title.append(kicker, heading);
+    const statusNode = document.createElement("span");
+    statusNode.className = "share-status";
+    statusNode.textContent = shareStatusLabel(status);
+    header.append(title, statusNode);
+
+    const linkField = makeCopyField("Shareable link", shareUrl, "Copy link");
+    const footer = document.createElement("div");
+    footer.className = "share-card-footer";
+    const expiryNode = document.createElement("span");
+    expiryNode.className = "share-expiry";
+    footer.appendChild(expiryNode);
+
+    const details = document.createElement("details");
+    details.className = "share-details";
+    const summary = document.createElement("summary");
+    summary.textContent = "Token and Vault receipt";
+    const tokenField = makeCopyField("Raw token", result.token, "Copy token");
+    const receiptData = document.createElement("pre");
+    receiptData.textContent = JSON.stringify(result.details || {}, null, 2);
+    details.append(summary, tokenField.field, receiptData);
+    footer.appendChild(details);
+
+    card.append(header, linkField.field, footer);
+    elements.shareList.prepend(card);
+    elements.wrapResult.hidden = false;
+
+    state.shares.set(receiptID, {
+        card,
+        status,
+        headingNode: heading,
+        statusNode,
+        expiryNode,
+        expiresAt,
+        copyButtons: [linkField.button, tokenField.button]
+    });
+    updateShareCountdowns();
+    if (status === "waiting") ensureReceiptStream();
+    else if (status === "untracked") setLiveReceiptState("Updates unavailable", "error");
+    else maybeCloseReceiptStream();
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function updateShareCountdowns() {
+    state.shares.forEach((share, receiptID) => {
+        if (share.status === "waiting" && share.expiresAt.getTime() <= Date.now()) {
+            updateShareStatus(receiptID, "expired");
+        }
+        if (share.status === "retrieved") share.expiryNode.textContent = "Token consumed";
+        else if (share.status === "expired") share.expiryNode.textContent = "Link expired";
+        else share.expiryNode.textContent = `Expires in ${remainingTime(share.expiresAt)}`;
+    });
+}
+
 async function createSecret() {
     clearAlert(elements.wrapError);
-    elements.wrapResult.hidden = true;
 
     if (state.pendingReads > 0) {
         showAlert(elements.wrapError, "Files are still being prepared. Try again in a moment.");
@@ -282,7 +449,7 @@ async function createSecret() {
         const response = await fetch("/wrap", {
             method: "POST",
             credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-Receipt-Tracking": "sse" },
             body: JSON.stringify({ data, ttl: String(ttl) })
         });
         if (!response.ok) throw new Error(await responseError(response, "Vault could not wrap the secret."));
@@ -292,16 +459,12 @@ async function createSecret() {
 
         const shareUrl = new URL(window.location.origin + window.location.pathname);
         shareUrl.hash = new URLSearchParams({ token: result.token }).toString();
-        elements.wrappedToken.value = result.token;
-        elements.wrappedLink.value = shareUrl.toString();
-        elements.wrapDetails.textContent = JSON.stringify(result.details || {}, null, 2);
-        elements.wrapResult.hidden = false;
+        addShare(result, shareUrl.toString(), ttl);
 
         wrapEditor.setValue("");
         state.files = [];
         renderAttachments();
         updateSizeMeter();
-        elements.wrapResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
         showToast("Secure link created");
     } catch (error) {
         showAlert(elements.wrapError, error.message || "Could not create the secure link.");
@@ -657,14 +820,14 @@ elements.toggleTokenVisibility.addEventListener("click", () => {
 });
 elements.copyUnwrappedText.addEventListener("click", () => copyText(unwrapEditor.getValue(), "Text copied"));
 elements.openAnotherButton.addEventListener("click", () => resetOpenedSecret());
-document.querySelectorAll("[data-copy]").forEach((button) => {
-    button.addEventListener("click", () => copyText(document.getElementById(button.dataset.copy).value));
-});
 
 document.addEventListener("click", (event) => {
     if (elements.vaultStatus.open && !elements.vaultStatus.contains(event.target)) elements.vaultStatus.open = false;
 });
-window.addEventListener("beforeunload", revokeObjectUrls);
+window.addEventListener("beforeunload", () => {
+    revokeObjectUrls();
+    state.receiptSource?.close();
+});
 
 function loadSharedToken() {
     const incomingToken = sharedTokenFromUrl();
@@ -682,3 +845,4 @@ updateSizeMeter();
 fetchAppInfo();
 fetchVaultHealth();
 window.setInterval(fetchVaultHealth, 30000);
+window.setInterval(updateShareCountdowns, 1000);
