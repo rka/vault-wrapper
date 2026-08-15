@@ -26,6 +26,7 @@ const elements = {
     sizeTrack: document.getElementById("sizeTrack"),
     sizeBar: document.getElementById("sizeBar"),
     ttl: document.getElementById("ttl"),
+    ttlPreview: document.getElementById("ttlPreview"),
     ttlPresets: document.getElementById("ttlPresets"),
     wrapButton: document.getElementById("wrapButton"),
     wrapError: document.getElementById("wrapError"),
@@ -99,6 +100,18 @@ wrapEditor.getInputField().setAttribute("aria-label", "Secret text or code");
 wrapEditor.getInputField().setAttribute("autocomplete", "off");
 wrapEditor.getInputField().setAttribute("spellcheck", "false");
 unwrapEditor.getInputField().setAttribute("aria-label", "Unwrapped text content");
+
+// CodeMirror reports a zero gutter offset for its only empty line even though
+// the gutter is already visible. Keep that one-line gutter aligned using its
+// measured width; CodeMirror resumes normal positioning once more lines exist.
+const wrapEditorElement = wrapEditor.getWrapperElement();
+function syncSingleLineGutter() {
+    const gutter = wrapEditorElement.querySelector(".CodeMirror-gutters");
+    if (gutter) wrapEditorElement.style.setProperty("--single-line-gutter", `${gutter.getBoundingClientRect().width}px`);
+    wrapEditorElement.classList.toggle("single-line-editor", wrapEditor.lineCount() === 1);
+}
+syncSingleLineGutter();
+window.requestAnimationFrame(syncSingleLineGutter);
 
 function formatBytes(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
@@ -257,17 +270,36 @@ function shareStatusLabel(status) {
     if (status === "retrieved") return "Retrieved";
     if (status === "expired") return "Expired";
     if (status === "untracked") return "Status unavailable";
-    return "Waiting for retrieval";
+    return "Waiting";
 }
 
-function remainingTime(expiresAt) {
-    const seconds = Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.ceil(seconds / 60);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.ceil(minutes / 60);
-    if (hours < 48) return `${hours}h`;
-    return `${Math.ceil(hours / 24)}d`;
+function countdownText(milliseconds) {
+    const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainder = seconds % 60;
+    if (days > 0) return `${days}d ${String(hours).padStart(2, "0")}h`;
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+    return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function durationLabel(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "seconds";
+    const parts = [];
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainder = seconds % 60;
+    if (days) parts.push(`${days}d`);
+    if (hours) parts.push(`${hours}h`);
+    if (minutes) parts.push(`${minutes}m`);
+    if (remainder || parts.length === 0) parts.push(`${remainder}s`);
+    return `seconds · ${parts.slice(0, 2).join(" ")}`;
+}
+
+function updateTtlPreview() {
+    elements.ttlPreview.textContent = durationLabel(Number.parseInt(elements.ttl.value, 10));
 }
 
 function maybeCloseReceiptStream() {
@@ -292,6 +324,13 @@ function updateShareStatus(receiptID, status, expiresAt) {
     const settled = status === "retrieved" || status === "expired";
     share.copyButtons.forEach((button) => { button.disabled = settled; });
     share.card.querySelectorAll("input").forEach((input) => { input.disabled = settled; });
+    renderShareTimer(share);
+    if (status !== previousStatus) {
+        share.card.classList.remove("status-change");
+        void share.card.offsetWidth;
+        share.card.classList.add("status-change");
+        window.setTimeout(() => share.card.classList.remove("status-change"), 700);
+    }
     if (status === "retrieved" && previousStatus !== "retrieved") showToast("A shared secret was retrieved");
     maybeCloseReceiptStream();
 }
@@ -322,9 +361,10 @@ function ensureReceiptStream() {
 }
 
 function makeCopyField(label, value, actionLabel) {
-    const field = document.createElement("label");
+    const field = document.createElement("div");
     field.className = "copy-field";
     const title = document.createElement("span");
+    title.className = "copy-field-title";
     title.textContent = label;
     const control = document.createElement("span");
     control.className = "copy-control";
@@ -332,11 +372,26 @@ function makeCopyField(label, value, actionLabel) {
     input.type = "text";
     input.readOnly = true;
     input.spellcheck = false;
+    input.setAttribute("aria-label", label);
     input.value = value;
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = actionLabel;
-    button.addEventListener("click", () => copyText(value, `${label} copied`));
+    let resetTimer = null;
+    button.addEventListener("click", async () => {
+        try {
+            await copyText(value, `${label} copied`);
+            window.clearTimeout(resetTimer);
+            button.textContent = "Copied";
+            control.classList.add("is-copied");
+            resetTimer = window.setTimeout(() => {
+                button.textContent = actionLabel;
+                control.classList.remove("is-copied");
+            }, 1400);
+        } catch (_) {
+            showToast("Clipboard is unavailable");
+        }
+    });
     control.append(input, button);
     field.append(title, control);
     return { field, button };
@@ -354,36 +409,50 @@ function addShare(result, shareUrl, ttl) {
 
     const header = document.createElement("div");
     header.className = "share-card-header";
+    const identity = document.createElement("div");
+    identity.className = "share-card-identity";
+    const statusMark = document.createElement("span");
+    statusMark.className = "share-status-mark";
+    statusMark.setAttribute("aria-hidden", "true");
     const title = document.createElement("div");
     const kicker = document.createElement("span");
     kicker.className = "share-kicker";
     kicker.textContent = "One-time link";
     const heading = document.createElement("h3");
     heading.textContent = "Ready to share";
-    title.append(kicker, heading);
+    title.append(heading, kicker);
+    identity.append(statusMark, title);
     const statusNode = document.createElement("span");
     statusNode.className = "share-status";
     statusNode.textContent = shareStatusLabel(status);
-    header.append(title, statusNode);
+    const time = document.createElement("div");
+    time.className = "share-time";
+    const countdownNode = document.createElement("strong");
+    countdownNode.className = "share-countdown";
+    const timeLabelNode = document.createElement("span");
+    timeLabelNode.className = "share-time-label";
+    time.append(countdownNode, timeLabelNode);
+    header.append(identity, statusNode, time);
 
-    const linkField = makeCopyField("Shareable link", shareUrl, "Copy link");
-    const footer = document.createElement("div");
-    footer.className = "share-card-footer";
-    const expiryNode = document.createElement("span");
-    expiryNode.className = "share-expiry";
-    footer.appendChild(expiryNode);
+    const linkField = makeCopyField("Shareable link", shareUrl, "Copy");
+    linkField.field.classList.add("share-link-field");
 
     const details = document.createElement("details");
     details.className = "share-details";
     const summary = document.createElement("summary");
-    summary.textContent = "Token and Vault receipt";
-    const tokenField = makeCopyField("Raw token", result.token, "Copy token");
+    summary.textContent = "Token and receipt";
+    const tokenField = makeCopyField("Raw token", result.token, "Copy");
     const receiptData = document.createElement("pre");
     receiptData.textContent = JSON.stringify(result.details || {}, null, 2);
     details.append(summary, tokenField.field, receiptData);
-    footer.appendChild(details);
 
-    card.append(header, linkField.field, footer);
+    const progress = document.createElement("span");
+    progress.className = "share-progress";
+    progress.setAttribute("aria-hidden", "true");
+    const progressFill = document.createElement("span");
+    progress.appendChild(progressFill);
+
+    card.append(header, linkField.field, details, progress);
     elements.shareList.prepend(card);
     elements.wrapResult.hidden = false;
 
@@ -392,8 +461,11 @@ function addShare(result, shareUrl, ttl) {
         status,
         headingNode: heading,
         statusNode,
-        expiryNode,
+        countdownNode,
+        timeLabelNode,
+        progressNode: progressFill,
         expiresAt,
+        totalMs: Math.max(1000, expiresAt.getTime() - Date.now()),
         copyButtons: [linkField.button, tokenField.button]
     });
     updateShareCountdowns();
@@ -403,14 +475,38 @@ function addShare(result, shareUrl, ttl) {
     card.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+function renderShareTimer(share) {
+    if (share.status === "retrieved") {
+        share.countdownNode.textContent = "Done";
+        share.timeLabelNode.textContent = "token consumed";
+        share.progressNode.style.transform = "scaleX(0)";
+        share.card.dataset.urgency = "settled";
+        return;
+    }
+    if (share.status === "expired") {
+        share.countdownNode.textContent = "00:00";
+        share.timeLabelNode.textContent = "expired";
+        share.progressNode.style.transform = "scaleX(0)";
+        share.card.dataset.urgency = "settled";
+        return;
+    }
+
+    const remainingMs = Math.max(0, share.expiresAt.getTime() - Date.now());
+    const ratio = Math.max(0, Math.min(1, remainingMs / share.totalMs));
+    share.countdownNode.textContent = countdownText(remainingMs);
+    share.timeLabelNode.textContent = "remaining";
+    share.progressNode.style.transform = `scaleX(${ratio})`;
+    share.card.dataset.urgency = remainingMs <= 60000 ? "urgent" : remainingMs <= 300000 ? "soon" : "normal";
+    share.timeLabelNode.parentElement.title = `Expires ${share.expiresAt.toLocaleString()}`;
+}
+
 function updateShareCountdowns() {
     state.shares.forEach((share, receiptID) => {
         if (share.status === "waiting" && share.expiresAt.getTime() <= Date.now()) {
             updateShareStatus(receiptID, "expired");
+            return;
         }
-        if (share.status === "retrieved") share.expiryNode.textContent = "Token consumed";
-        else if (share.status === "expired") share.expiryNode.textContent = "Link expired";
-        else share.expiryNode.textContent = `Expires in ${remainingTime(share.expiresAt)}`;
+        renderShareTimer(share);
     });
 }
 
@@ -785,7 +881,10 @@ elements.dropZone.addEventListener("drop", (event) => {
     queueFiles(event.dataTransfer?.files);
 });
 
-wrapEditor.on("change", updateSizeMeter);
+wrapEditor.on("change", () => {
+    updateSizeMeter();
+    syncSingleLineGutter();
+});
 wrapEditor.on("drop", (_, event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -797,9 +896,11 @@ elements.ttlPresets.addEventListener("click", (event) => {
     if (!button) return;
     elements.ttl.value = button.dataset.seconds;
     elements.ttlPresets.querySelectorAll("button").forEach((preset) => preset.classList.toggle("active", preset === button));
+    updateTtlPreview();
 });
 elements.ttl.addEventListener("input", () => {
     elements.ttlPresets.querySelectorAll("button").forEach((preset) => preset.classList.toggle("active", preset.dataset.seconds === elements.ttl.value));
+    updateTtlPreview();
 });
 
 elements.wrapButton.addEventListener("click", createSecret);
@@ -842,6 +943,7 @@ function loadSharedToken() {
 window.addEventListener("hashchange", loadSharedToken);
 loadSharedToken();
 updateSizeMeter();
+updateTtlPreview();
 fetchAppInfo();
 fetchVaultHealth();
 window.setInterval(fetchVaultHealth, 30000);
