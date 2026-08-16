@@ -107,7 +107,7 @@ wrapEditor = CodeMirror(document.getElementById("wrapInput"), {
     mode: "javascript",
     theme: elements.body.classList.contains("dark-mode") ? "dracula" : "default",
     dragDrop: false,
-    placeholder: "Paste a password, configuration, note, or code snippet…"
+    placeholder: "Paste text or add files…"
 });
 
 unwrapEditor = CodeMirror(document.getElementById("unwrapEditor"), {
@@ -137,7 +137,7 @@ window.requestAnimationFrame(syncSingleLineGutter);
 
 function formatBytes(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB"];
+    const units = ["B", "KiB", "MiB", "GiB"];
     const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
     const value = bytes / Math.pow(1024, index);
     const digits = index === 0 ? 0 : value >= 10 ? 1 : 2;
@@ -159,7 +159,7 @@ function payloadSize() {
 function updateSizeMeter() {
     const size = payloadSize();
     const percentage = Math.min(100, (size / state.maxSize) * 100 || 0);
-    elements.sizeLabel.textContent = `${formatBytes(size)} of ${formatBytes(state.maxSize)}`;
+    elements.sizeLabel.textContent = `${formatBytes(size)} / ${formatBytes(state.maxSize)}`;
     elements.sizeBar.style.width = `${percentage}%`;
     elements.sizeTrack.setAttribute("aria-valuenow", String(Math.round(percentage)));
     elements.sizeTrack.classList.toggle("warning", percentage >= 75 && percentage < 100);
@@ -288,11 +288,10 @@ function setLiveReceiptState(label, status) {
     elements.liveReceiptState.dataset.state = status;
 }
 
-function shareStatusLabel(status) {
-    if (status === "retrieved") return "Retrieved";
+function shareHeadingLabel(status) {
+    if (status === "retrieved") return "Opened";
     if (status === "expired") return "Expired";
-    if (status === "untracked") return "Status unavailable";
-    return "Waiting";
+    return "Ready";
 }
 
 function countdownText(milliseconds) {
@@ -307,7 +306,7 @@ function countdownText(milliseconds) {
 }
 
 function durationLabel(seconds) {
-    if (!Number.isFinite(seconds) || seconds <= 0) return "seconds";
+    if (!Number.isFinite(seconds) || seconds <= 0) return "—";
     const parts = [];
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
@@ -317,7 +316,7 @@ function durationLabel(seconds) {
     if (hours) parts.push(`${hours}h`);
     if (minutes) parts.push(`${minutes}m`);
     if (remainder || parts.length === 0) parts.push(`${remainder}s`);
-    return `seconds · ${parts.slice(0, 2).join(" ")}`;
+    return parts.slice(0, 2).join(" ");
 }
 
 function updateTtlPreview() {
@@ -329,7 +328,7 @@ function maybeCloseReceiptStream() {
     if (hasWaiting || !state.receiptSource) return;
     state.receiptSource.close();
     state.receiptSource = null;
-    setLiveReceiptState("Updates complete", "idle");
+    setLiveReceiptState("Complete", "idle");
 }
 
 function updateShareStatus(receiptID, status, expiresAt) {
@@ -339,10 +338,7 @@ function updateShareStatus(receiptID, status, expiresAt) {
     if (expiresAt) share.expiresAt = new Date(expiresAt);
     share.status = status;
     share.card.dataset.status = status;
-    share.statusNode.textContent = shareStatusLabel(status);
-    if (status === "retrieved") share.headingNode.textContent = "Secret retrieved";
-    else if (status === "expired") share.headingNode.textContent = "Link expired";
-    else share.headingNode.textContent = "Ready to share";
+    share.headingNode.textContent = shareHeadingLabel(status);
     const settled = status === "retrieved" || status === "expired";
     share.copyButtons.forEach((button) => { button.disabled = settled; });
     share.card.querySelectorAll("input").forEach((input) => { input.disabled = settled; });
@@ -353,20 +349,20 @@ function updateShareStatus(receiptID, status, expiresAt) {
         share.card.classList.add("status-change");
         window.setTimeout(() => share.card.classList.remove("status-change"), 700);
     }
-    if (status === "retrieved" && previousStatus !== "retrieved") showToast("A shared secret was retrieved");
+    if (status === "retrieved" && previousStatus !== "retrieved") showToast("Link opened");
     maybeCloseReceiptStream();
 }
 
 function ensureReceiptStream() {
     if (state.receiptSource) return;
     if (!window.EventSource) {
-        setLiveReceiptState("Updates unavailable", "error");
+        setLiveReceiptState("Unavailable", "error");
         return;
     }
     setLiveReceiptState("Connecting", "connecting");
     const source = new EventSource("/api/events");
     state.receiptSource = source;
-    source.addEventListener("open", () => setLiveReceiptState("Live updates", "connected"));
+    source.addEventListener("open", () => setLiveReceiptState("Live", "connected"));
     source.addEventListener("receipt", (event) => {
         try {
             const update = JSON.parse(event.data);
@@ -437,16 +433,10 @@ function addShare(result, shareUrl, ttl) {
     statusMark.className = "share-status-mark";
     statusMark.setAttribute("aria-hidden", "true");
     const title = document.createElement("div");
-    const kicker = document.createElement("span");
-    kicker.className = "share-kicker";
-    kicker.textContent = "One-time link";
     const heading = document.createElement("h3");
-    heading.textContent = "Ready to share";
-    title.append(heading, kicker);
+    heading.textContent = shareHeadingLabel(status);
+    title.append(heading);
     identity.append(statusMark, title);
-    const statusNode = document.createElement("span");
-    statusNode.className = "share-status";
-    statusNode.textContent = shareStatusLabel(status);
     const time = document.createElement("div");
     time.className = "share-time";
     const countdownNode = document.createElement("strong");
@@ -454,16 +444,16 @@ function addShare(result, shareUrl, ttl) {
     const timeLabelNode = document.createElement("span");
     timeLabelNode.className = "share-time-label";
     time.append(countdownNode, timeLabelNode);
-    header.append(identity, statusNode, time);
+    header.append(identity, time);
 
-    const linkField = makeCopyField("Shareable link", shareUrl, "Copy");
+    const linkField = makeCopyField("Link", shareUrl, "Copy");
     linkField.field.classList.add("share-link-field");
 
     const details = document.createElement("details");
     details.className = "share-details";
     const summary = document.createElement("summary");
-    summary.textContent = "Token and receipt";
-    const tokenField = makeCopyField("Raw token", result.token, "Copy");
+    summary.textContent = "Details";
+    const tokenField = makeCopyField("Token", result.token, "Copy");
     const receiptData = document.createElement("pre");
     receiptData.textContent = JSON.stringify(result.details || {}, null, 2);
     details.append(summary, tokenField.field, receiptData);
@@ -482,7 +472,6 @@ function addShare(result, shareUrl, ttl) {
         card,
         status,
         headingNode: heading,
-        statusNode,
         countdownNode,
         timeLabelNode,
         progressNode: progressFill,
@@ -492,7 +481,7 @@ function addShare(result, shareUrl, ttl) {
     });
     updateShareCountdowns();
     if (status === "waiting") ensureReceiptStream();
-    else if (status === "untracked") setLiveReceiptState("Updates unavailable", "error");
+    else if (status === "untracked") setLiveReceiptState("Unavailable", "error");
     else maybeCloseReceiptStream();
     card.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -500,7 +489,7 @@ function addShare(result, shareUrl, ttl) {
 function renderShareTimer(share) {
     if (share.status === "retrieved") {
         share.countdownNode.textContent = "Done";
-        share.timeLabelNode.textContent = "token consumed";
+        share.timeLabelNode.textContent = "consumed";
         share.progressNode.style.transform = "scaleX(0)";
         share.card.dataset.urgency = "settled";
         return;
@@ -562,7 +551,7 @@ async function createSecret() {
     if (text.trim()) data.text = text;
     if (state.files.length) data.files = state.files;
 
-    setBusy(elements.wrapButton, true, "Sealing secret…");
+    setBusy(elements.wrapButton, true, "Creating link…");
     try {
         const response = await fetch("/wrap", {
             method: "POST",
@@ -570,7 +559,7 @@ async function createSecret() {
             headers: { "Content-Type": "application/json", "X-Receipt-Tracking": "sse" },
             body: JSON.stringify({ data, ttl: String(ttl) })
         });
-        if (!response.ok) throw new Error(await responseError(response, "Vault could not wrap the secret."));
+        if (!response.ok) throw new Error(await responseError(response, "Could not create the link."));
 
         const result = await response.json();
         if (!result.token) throw new Error("Vault returned an incomplete wrapping response.");
@@ -583,9 +572,9 @@ async function createSecret() {
         state.files = [];
         renderAttachments();
         updateSizeMeter();
-        showToast("Secure link created");
+        showToast("Link created");
     } catch (error) {
-        showAlert(elements.wrapError, error.message || "Could not create the secure link.");
+        showAlert(elements.wrapError, error.message || "Could not create the link.");
     } finally {
         setBusy(elements.wrapButton, false, "");
     }
@@ -731,7 +720,7 @@ async function openSecret() {
         clearSharedTokenFromAddress();
         elements.unwrapResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
         elements.openedResultTitle.focus({ preventScroll: true });
-        showToast("Secret opened — token consumed");
+        showToast("Secret opened");
     } catch (error) {
         showAlert(elements.unwrapError, error.message || "Could not open the secret.");
     } finally {
